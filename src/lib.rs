@@ -1,22 +1,50 @@
+use id_converter::IDConverter;
 use reqwest;
-use crate::id_converter::IDConverter;
+use roboat;
 mod id_converter;
 
 pub struct Backend {
-    roblox_cookie: String,
+    rbx_api_client: roboat::Client,
     id_generator: IDConverter
 }
 
 impl Backend {
-    pub fn whitelist_asset(asset_id: u64, user_id_requesting: u64) {
+    pub fn new(roblox_cookie: String, id_generator_alphabets: Vec<String>) -> Self {
+        if id_generator_alphabets.len() < 2 {
+            panic!("ID Generator must have at least 2 alphabets.");
+        }
 
+        let rbx_client = roboat::ClientBuilder::new()
+            .roblosecurity(roblox_cookie)
+            .build();
+        let id_generator = IDConverter::new(&id_generator_alphabets[0], &id_generator_alphabets[1]);
+        Self { rbx_api_client: rbx_client, id_generator: id_generator }
+    } 
+
+    pub async fn whitelist_asset(&self, asset_id: u64, user_id_requesting: u64) {
+        
     }
 
-    pub fn get_shareable_id(id: String) -> String {
-        String::new()
+    pub fn get_shareable_id(&self, id: String) -> Result<String, Box<dyn std::error::Error>> {
+        let id = id.parse::<u64>();
+        if id.is_ok() {
+            let converted_id = self.id_generator.to_short(id.unwrap());
+            if converted_id.is_ok() {
+                Ok(converted_id.unwrap())
+            } else {
+                Err(converted_id.unwrap_err())
+            }
+        } else {
+            Err("ID cannot be converted to integer.".into())
+        }
     }
 
-    pub fn get_number_id(id: String) -> String {
-        String::new()
+    pub fn get_number_id(&self, id: String) -> Result<u64, Box<dyn std::error::Error>> {
+        let converted_id = self.id_generator.to_number(id);
+        if converted_id.is_ok() {
+            Ok(converted_id.unwrap())
+        } else {
+            Err(converted_id.unwrap_err())
+        }
     }
 }

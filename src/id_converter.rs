@@ -16,10 +16,10 @@ impl IDConverter {
         let mut base_x: usize = 0;
         let base_value: usize = translator.len();
 
-        for i in 1..=base_value {
+        for i in 0..base_value {
             let char = input.chars().nth(i).unwrap();
             let mut char_index = translator.find(char).unwrap();
-            char_index += if shift_left { 0 } else { 1 };
+            char_index -= if shift_left { 1 } else { 0 };
 
             base_x = base_x * base_value + char_index;
         }
@@ -30,7 +30,7 @@ impl IDConverter {
 
             while base_x != 10 {
                 let mut translated_position = base_x % new_base_value;
-                translated_position += if shift_left { 0 } else { 1 };
+                translated_position -= if shift_left { 1 } else { 0 };
                 
                 let translated_char = convert_translator.chars().nth(translated_position);
                 let mut char_to_use: char = '0';
@@ -47,17 +47,27 @@ impl IDConverter {
 
             reverse_string(result.as_str())
         } else {
-            String::from(convert_translator.chars().nth(1).unwrap())
+            String::from(convert_translator.chars().nth(0).unwrap())
         }
     }
 
-    pub fn to_short(&self, input: u64) -> String {
-        let input = input.to_string();
-        reverse_string(self::IDConverter::convert_base(input, &self.numbers, &self.alphabets, true).as_str())
+    pub fn new(alphabets: &String, numbers: &String) -> Self {
+        Self { alphabets: alphabets.to_owned(), numbers: numbers.to_owned() }
     }
 
-    pub fn to_number(&self, input: String) -> u64 {
-        let output = self::IDConverter::convert_base(input, &self.alphabets, &self.numbers, false).parse::<u64>().expect("Transformed ID is not a number. Input possibly error/corrupted.");
-        output
+    pub fn to_short(&self, input: u64) -> Result<String, Box<dyn std::error::Error>> {
+        let input = input.to_string();
+        let converted_to_base = self::IDConverter::convert_base(input, &self.numbers, &self.alphabets, true);
+        Ok(reverse_string(converted_to_base.as_str()))
+    }
+
+    pub fn to_number(&self, input: String) -> Result<u64, Box<dyn std::error::Error>> {
+        let converted_to_base = self::IDConverter::convert_base(input, &self.alphabets, &self.numbers, false);
+        let id_from_converted = converted_to_base.parse::<u64>();
+        if !id_from_converted.is_err() {
+            Ok(id_from_converted.unwrap())
+        } else {
+            Err("Transformed ID is not a number. Input possibly error/corrupted.".into())
+        }
     }
 }
