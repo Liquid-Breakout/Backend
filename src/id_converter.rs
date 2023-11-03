@@ -64,7 +64,7 @@ impl IDConverter {
     pub fn to_number(&self, input: String) -> Result<u64, Box<dyn std::error::Error>> {
         let converted_to_base = self::IDConverter::convert_base(input, &self.alphabets, &self.numbers, false);
         let id_from_converted = converted_to_base.parse::<u64>();
-        if !id_from_converted.is_err() {
+        if id_from_converted.is_ok() {
             Ok(id_from_converted.unwrap())
         } else {
             Err("Transformed ID is not a number. Input possibly error/corrupted.".into())
