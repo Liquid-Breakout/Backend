@@ -1,11 +1,12 @@
 use id_converter::IDConverter;
+use roblox::RobloxWrapper;
 use reqwest;
-use roboat;
 mod id_converter;
-
+mod roblox;
 pub struct Backend {
-    rbx_api_client: roboat::Client,
-    id_generator: IDConverter
+    rbx_client: RobloxWrapper,
+    id_generator: IDConverter,
+    reqwest_client: reqwest::Client
 }
 
 impl Backend {
@@ -13,16 +14,17 @@ impl Backend {
         if id_generator_alphabets.len() < 2 {
             panic!("ID Generator must have at least 2 alphabets.");
         }
-
-        let rbx_client = roboat::ClientBuilder::new()
-            .roblosecurity(roblox_cookie)
-            .build();
+        let reqwest_client = reqwest::Client::new();
+        let rbx_client = RobloxWrapper::new(roblox_cookie, reqwest_client);
         let id_generator = IDConverter::new(&id_generator_alphabets[0], &id_generator_alphabets[1]);
-        Self { rbx_api_client: rbx_client, id_generator: id_generator }
+        Self { rbx_client: rbx_client, id_generator: id_generator, reqwest_client: reqwest_client }
     } 
 
-    pub async fn whitelist_asset(&self, asset_id: u64, user_id_requesting: u64) {
-        
+    pub async fn whitelist_asset(&self, asset_id: u64, user_id_requesting: u64) -> Result<(), Box<dyn std::error::Error>> {
+        if !self.rbx_client.user_own_asset(user_id_requesting, asset_id).await.unwrap() {
+            Err("User does not own asset.".into())
+        }
+        Ok(())
     }
 
     pub fn get_shareable_id(&self, id: String) -> Result<String, Box<dyn std::error::Error>> {
