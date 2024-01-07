@@ -21,8 +21,10 @@ impl Backend {
     } 
 
     pub async fn whitelist_asset(&self, asset_id: u64, user_id_requesting: u64) -> Result<(), Box<dyn std::error::Error>> {
-        if !self.rbx_client.user_own_asset(user_id_requesting, asset_id).await.unwrap() {
-            Err("User does not own asset.".into())
+        if !self.rbx_client.user_own_asset(user_id_requesting, asset_id).await.unwrap(){ //why are you so subspace_tripmine
+           // Err("User does not own asset.".into())
+           //Err(|e: std::string::ParseError | e.to_string());
+           //Err(u64())
         }
         Ok(())
     }
