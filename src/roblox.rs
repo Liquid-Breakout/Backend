@@ -34,7 +34,7 @@ impl RobloxWrapper {
     pub async fn refresh_xcsrf_token(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let request_result = Client::new()
             .post(AUTH_URL)
-            .headers(Self::prepare_headers(&*self))
+            .headers(self.prepare_headers())
             .send()
             .await?;
 
