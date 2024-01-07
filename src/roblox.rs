@@ -1,4 +1,5 @@
 use reqwest::{Client, header};
+use crate::utils;
 
 const AUTH_URL: &str = "https://auth.roblox.com/";
 const XCSRF_HEADER: &str = "x-csrf-token";
@@ -8,6 +9,7 @@ pub struct RobloxWrapper {
     xcsrf_token: String
 }
 impl RobloxWrapper {
+    #[allow(unused_must_use)]
     pub fn new(cookie: String) -> Self {
         let cookie_value = format!(".ROBLOSECURITY={}", cookie);
         let mut wrapper_self = Self { cookie: cookie_value, xcsrf_token: "".to_string() };
@@ -19,9 +21,10 @@ impl RobloxWrapper {
     fn prepare_headers(&self) -> header::HeaderMap {
         let mut reqwest_headers = header::HeaderMap::new();
 
-        let mut xcsrf_header = header::HeaderValue::from_static(self.xcsrf_token.as_str());
+        // send help
+        let xcsrf_header = header::HeaderValue::from_static(utils::string_to_static_str(self.xcsrf_token.to_owned()));
         reqwest_headers.insert(XCSRF_HEADER, xcsrf_header);
-        let mut cookie_header = header::HeaderValue::from_static(self.cookie.as_str());
+        let mut cookie_header = header::HeaderValue::from_static(utils::string_to_static_str(self.cookie.to_owned()));
         cookie_header.set_sensitive(true);
         reqwest_headers.insert("cookie", cookie_header);
 
@@ -31,7 +34,7 @@ impl RobloxWrapper {
     pub async fn refresh_xcsrf_token(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let request_result = Client::new()
             .post(AUTH_URL)
-            .headers(self.prepare_headers())
+            .headers(Self::prepare_headers(&*self))
             .send()
             .await?;
 
