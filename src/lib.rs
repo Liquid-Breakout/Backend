@@ -1,8 +1,9 @@
 use id_converter::IDConverter;
 use roblox::RobloxWrapper;
-use reqwest;
+
 mod id_converter;
 mod roblox;
+mod utils;
 pub struct Backend {
     rbx_client: RobloxWrapper,
     id_generator: IDConverter

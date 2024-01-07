@@ -1,6 +1,4 @@
-fn reverse_string(s: &str) -> String {
-    s.chars().rev().collect()
-}
+use crate::utils;
 
 pub struct IDConverter {
     alphabets: String,
@@ -45,7 +43,7 @@ impl IDConverter {
                 result.push(char_to_use);
             }
 
-            reverse_string(result.as_str())
+            utils::reverse_string(result.as_str())
         } else {
             String::from(convert_translator.chars().nth(0).unwrap())
         }
@@ -58,7 +56,7 @@ impl IDConverter {
     pub fn to_short(&self, input: u64) -> Result<String, Box<dyn std::error::Error>> {
         let input = input.to_string();
         let converted_to_base = self::IDConverter::convert_base(input, &self.numbers, &self.alphabets, true);
-        Ok(reverse_string(converted_to_base.as_str()))
+        Ok(utils::reverse_string(converted_to_base.as_str()))
     }
 
     pub fn to_number(&self, input: String) -> Result<u64, Box<dyn std::error::Error>> {
