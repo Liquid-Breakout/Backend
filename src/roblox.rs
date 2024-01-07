@@ -8,15 +8,17 @@ pub struct RobloxWrapper {
     xcsrf_token: String
 }
 impl RobloxWrapper {
-    pub async fn new(cookie: String) -> Self {
+    pub fn new(cookie: String) -> Self {
         let cookie_value = format!(".ROBLOSECURITY={}", cookie);
-        Self { cookie: cookie_value, xcsrf_token: "".to_string() }
+        let mut wrapper_self = Self { cookie: cookie_value, xcsrf_token: "".to_string() };
+        wrapper_self.refresh_xcsrf_token();
+
+        wrapper_self
     }
 
     fn prepare_headers(&self) -> header::HeaderMap {
         let mut reqwest_headers = header::HeaderMap::new();
 
-        if self.xcsrf_token == ""
         let mut xcsrf_header = header::HeaderValue::from_static(self.xcsrf_token.as_str());
         reqwest_headers.insert(XCSRF_HEADER, xcsrf_header);
         let mut cookie_header = header::HeaderValue::from_static(self.cookie.as_str());
