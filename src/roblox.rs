@@ -1,7 +1,9 @@
 use reqwest::{Client, header};
 use crate::utils;
 
-const AUTH_URL: &str = "https://auth.roblox.com/";
+const AUTH_URL: &str = "https://auth.roblox.com";
+const ECONOMY_URL: &str = "https://economy.roblox.com/v2";
+const INVENTORY_URL: &str = "https://inventory.roblox.com/v1";
 const XCSRF_HEADER: &str = "x-csrf-token";
 
 pub struct RobloxWrapper {
@@ -50,7 +52,8 @@ impl RobloxWrapper {
 
     pub async fn user_own_asset(&self, user_id: u64, asset_id: u64) -> Result<bool, Box<dyn std::error::Error>> {
         let formatted_url = format!(
-            "https://inventory.roblox.com/v1/users/{}/items/Asset/{}/is-owned",
+            "{}/users/{}/items/Asset/{}/is-owned",
+            INVENTORY_URL,
             user_id,
             asset_id
         );
