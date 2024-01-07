@@ -5,8 +5,7 @@ mod id_converter;
 mod roblox;
 pub struct Backend {
     rbx_client: RobloxWrapper,
-    id_generator: IDConverter,
-    reqwest_client: reqwest::Client
+    id_generator: IDConverter
 }
 
 impl Backend {
@@ -14,17 +13,16 @@ impl Backend {
         if id_generator_alphabets.len() < 2 {
             panic!("ID Generator must have at least 2 alphabets.");
         }
-        let reqwest_client = reqwest::Client::new();
-        let rbx_client = RobloxWrapper::new(roblox_cookie, reqwest_client);
+        let rbx_client = RobloxWrapper::new(roblox_cookie);
         let id_generator = IDConverter::new(&id_generator_alphabets[0], &id_generator_alphabets[1]);
-        Self { rbx_client: rbx_client, id_generator: id_generator, reqwest_client: reqwest_client }
+        Self { rbx_client: rbx_client, id_generator: id_generator }
     } 
+    //
 
     pub async fn whitelist_asset(&self, asset_id: u64, user_id_requesting: u64) -> Result<(), Box<dyn std::error::Error>> {
         if !self.rbx_client.user_own_asset(user_id_requesting, asset_id).await.unwrap(){ //why are you so subspace_tripmine
            // Err("User does not own asset.".into())
-           //Err(|e: std::string::ParseError | e.to_string());
-           //Err(u64())
+           //Err(|e: std::string::ParseError | e.to_string())
         }
         Ok(())
     }

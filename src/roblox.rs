@@ -1,11 +1,53 @@
+use reqwest::{Client, header};
+
+const AUTH_URL: &str = "https://auth.roblox.com/";
+const XCSRF_HEADER: &str = "x-csrf-token";
+
 pub struct RobloxWrapper {
     cookie: String,
-    reqwest_client: reqwest::Client
+    xcsrf_token: String
 }
 impl RobloxWrapper {
-    pub fn new(cookie: String, reqwest_client: reqwest::Client) -> Self {
-        Self { cookie: cookie, reqwest_client: reqwest_client }
+    pub async fn new(cookie: String) -> Self {
+        let cookie_value = format!(".ROBLOSECURITY={}", cookie);
+        Self { cookie: cookie_value, xcsrf_token: "".to_string() }
     }
+
+    fn prepare_headers(&self) -> header::HeaderMap {
+        let mut reqwest_headers = header::HeaderMap::new();
+        let mut xcsrf_header = header::HeaderValue::from_static(self.xcsrf_token.as_str());
+        reqwest_headers.insert(XCSRF_HEADER, xcsrf_header);
+        let mut cookie_header = header::HeaderValue::from_static(self.cookie.as_str());
+        cookie_header.set_sensitive(true);
+        reqwest_headers.insert("cookie", cookie_header);
+
+        reqwest_headers
+    }
+
+    pub async fn refresh_xcsrf_token(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let request_result = Client::new()
+            .post(AUTH_URL)
+            .headers(self.prepare_headers())
+            .send()
+            .await?;
+
+        let xcsrf = request_result
+            .headers()
+            .get(XCSRF_HEADER)
+            .map(|x| x.to_str().unwrap().to_string())
+            .unwrap;
+
+        match xcsrf {
+            Some(x) => {
+                self.xcsrf_token = x;
+                Ok(())
+            }
+            None => {
+                Ok(())
+            }
+        }
+    }
+
     pub async fn user_own_asset(&self, user_id: u64, asset_id: u64) -> Result<bool, Box<dyn std::error::Error>> {
         let formatted_url = format!(
             "https://inventory.roblox.com/v1/users/{}/items/Asset/{}/is-owned",
@@ -13,9 +55,9 @@ impl RobloxWrapper {
             asset_id
         );
 
-        let request_result = self
-            .reqwest_client
+        let request_result = reqwest::Client::new()
             .get(formatted_url)
+            .headers(self.prepare_headers())
             .send()
             .await?;
 
