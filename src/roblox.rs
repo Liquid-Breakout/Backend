@@ -15,6 +15,8 @@ impl RobloxWrapper {
 
     fn prepare_headers(&self) -> header::HeaderMap {
         let mut reqwest_headers = header::HeaderMap::new();
+
+        if self.xcsrf_token == ""
         let mut xcsrf_header = header::HeaderValue::from_static(self.xcsrf_token.as_str());
         reqwest_headers.insert(XCSRF_HEADER, xcsrf_header);
         let mut cookie_header = header::HeaderValue::from_static(self.cookie.as_str());
