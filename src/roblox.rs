@@ -35,17 +35,10 @@ impl RobloxWrapper {
             .headers()
             .get(XCSRF_HEADER)
             .map(|x| x.to_str().unwrap().to_string())
-            .unwrap;
+            .unwrap();
 
-        match xcsrf {
-            Some(x) => {
-                self.xcsrf_token = x;
-                Ok(())
-            }
-            None => {
-                Ok(())
-            }
-        }
+        self.xcsrf_token = xcsrf;
+        Ok(())
     }
 
     pub async fn user_own_asset(&self, user_id: u64, asset_id: u64) -> Result<bool, Box<dyn std::error::Error>> {
