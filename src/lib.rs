@@ -21,11 +21,20 @@ impl Backend {
     //
 
     pub async fn whitelist_asset(&self, asset_id: u64, user_id_requesting: u64) -> Result<(), Box<dyn std::error::Error>> {
-        if !self.rbx_client.user_own_asset(user_id_requesting, asset_id).await.unwrap(){ //why are you so subspace_tripmine
-           // Err("User does not own asset.".into())
-           //Err(|e: std::string::ParseError | e.to_string())
+        if !self.rbx_client.user_own_asset(user_id_requesting, asset_id).await.unwrap() { //why are you so subspace_tripmine
+            // Err("User does not own asset.".into())
+            //Err(|e: std::string::ParseError | e.to_string())
         }
-        Ok(())
+        let item_details = self.rbx_client.fetch_asset_details(asset_id).await?;
+        if item_details.is_public_domain.is_none() || !item_details.is_public_domain.unwrap() {
+            Err("Asset is not for sale.".into())
+        } else if item_details.price_in_robux.is_none() || item_details.asset_type_id.unwrap() != roblox::AssetType::Model {
+            Err("Asset type is not a Model.".into())
+        } else if item_details.price_in_robux.is_some() && item_details.price_in_robux.unwrap() > 0 {
+            Err("Asset costs robux.".into())
+        }
+
+        self.rbx_client.purchase_asset(asset_id)
     }
 
     pub fn get_shareable_id(&self, id: String) -> Result<String, Box<dyn std::error::Error>> {
