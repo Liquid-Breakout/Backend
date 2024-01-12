@@ -60,7 +60,7 @@ impl CreatorType {
 }
 
 #[derive(
-Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize, Copy,
+Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize,
 )]
 #[serde(rename_all = "PascalCase")]
 pub struct Creator {
