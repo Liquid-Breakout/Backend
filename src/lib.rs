@@ -1,12 +1,16 @@
+use mongodb::{Client, options::ClientOptions};
+
 use id_converter::IDConverter;
 use roblox::RobloxWrapper;
 
 mod id_converter;
 mod roblox;
 mod utils;
+pub mod database;
 pub struct Backend {
     rbx_client: RobloxWrapper,
-    id_generator: IDConverter
+    id_generator: IDConverter,
+    mongo_client: Option<Client>
 }
 
 impl Backend {
@@ -16,9 +20,17 @@ impl Backend {
         }
         let rbx_client = RobloxWrapper::new(roblox_cookie);
         let id_generator = IDConverter::new(&id_generator_alphabets[0], &id_generator_alphabets[1]);
-        Self { rbx_client: rbx_client, id_generator: id_generator }
+
+        Self { rbx_client: rbx_client, id_generator: id_generator, mongo_client: None }
     } 
-    //
+    
+    pub async fn connect_mongodb(&mut self, mongodb_url: String) -> Result<(), Box<dyn std::error::Error>> {
+        let mongo_options = ClientOptions::parse(mongodb_url).await?;
+        let mongo_client = Client::with_options(mongo_options)?;
+
+        self.mongo_client = Some(mongo_client);
+        Ok(())
+    }
 
     pub async fn whitelist_asset(&self, asset_id: u64, user_id_requesting: u64) -> Result<(), Box<dyn std::error::Error>> {
         if !self.rbx_client.user_own_asset(user_id_requesting, asset_id).await.unwrap() { //why are you so subspace_tripmine
@@ -27,36 +39,26 @@ impl Backend {
         }
         let item_details = self.rbx_client.fetch_asset_details(asset_id).await?;
         if item_details.is_public_domain.is_none() || !item_details.is_public_domain.unwrap() {
-            Err("Asset is not for sale.".into())
+            panic!("Asset is not for sale.")
         } else if item_details.price_in_robux.is_none() || item_details.asset_type_id.unwrap() != roblox::AssetType::Model {
-            Err("Asset type is not a Model.".into())
+            panic!("Asset type is not a Model.")
         } else if item_details.price_in_robux.is_some() && item_details.price_in_robux.unwrap() > 0 {
-            Err("Asset costs robux.".into())
+            panic!("Asset costs robux.")
         }
 
-        self.rbx_client.purchase_asset(asset_id)
+        self.rbx_client.purchase_asset(asset_id).await?;
+        Ok(())
     }
 
     pub fn get_shareable_id(&self, id: String) -> Result<String, Box<dyn std::error::Error>> {
-        let id = id.parse::<u64>();
-        if id.is_ok() {
-            let converted_id = self.id_generator.to_short(id.unwrap());
-            if converted_id.is_ok() {
-                Ok(converted_id.unwrap())
-            } else {
-                Err(converted_id.unwrap_err())
-            }
-        } else {
-            Err("ID cannot be converted to integer.".into())
+        let parsed_id = id.parse::<u64>();
+        match parsed_id {
+            Ok(i) => self.id_generator.to_short(i.into()),
+            Err(_) => panic!("ID cannot be converted into integer.")
         }
     }
 
-    pub fn get_number_id(&self, id: String) -> Result<u64, Box<dyn std::error::Error>> {
-        let converted_id = self.id_generator.to_number(id);
-        if converted_id.is_ok() {
-            Ok(converted_id.unwrap())
-        } else {
-            Err(converted_id.unwrap_err())
-        }
+    pub fn get_number_id(&self, id: String) -> Result<u128, Box<dyn std::error::Error>> {
+        self.id_generator.to_number(id)
     }
 }
