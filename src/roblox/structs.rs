@@ -3,35 +3,14 @@ use serde::{Deserialize, Serialize};
 #[derive(
 Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize, Copy,
 )]
-pub enum ItemType {
-    #[default]
-    Asset,
-    Bundle,
-}
-
-#[derive(
-Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize, Copy,
-)]
 pub enum AssetType {
     #[default]
-    Image,
-    Audio,
-    Mesh,
-    Lua,
-    Model,
-    Decal
-}
-impl AssetType {
-    pub(crate) fn as_u8(&self) -> u8 {
-        match self {
-            Self::Image => 1,
-            Self::Audio => 3,
-            Self::Mesh => 4,
-            Self::Lua => 5,
-            Self::Model => 10,
-            Self::Decal => 13
-        }
-    }
+    Image = 1,
+    Audio = 3,
+    Mesh = 4,
+    Lua = 5,
+    Model = 10,
+    Decal = 13
 }
 
 #[derive(
@@ -39,16 +18,8 @@ Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserial
 )]
 pub enum CreatorType {
     #[default]
-    User,
-    Group,
-}
-impl CreatorType {
-    pub(crate) fn as_u8(&self) -> u8 {
-        match self {
-            Self::User => 1,
-            Self::Group => 2,
-        }
-    }
+    User = 1,
+    Group = 2,
 }
 
 #[derive(
