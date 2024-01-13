@@ -30,7 +30,7 @@ impl Backend {
         api_key_generator.to_short(doc_count * 8 + datetime_now() * 2)
     }
 
-    pub async fn get_api_key_entry(&self, api_key: &str) -> Result<ApiKey, Box<dyn std::error::Error>> {
+    pub async fn find_api_key_entry(&self, api_key: &str) -> Result<Option<ApiKey>, Box<dyn std::error::Error>> {
         let database = self.get_database();
 
         let api_keys_collection: Collection<ApiKey> = database.collection("apiKeys");
@@ -42,18 +42,15 @@ impl Backend {
             None
         ).await?;
 
-        match result {
-            Some(doc) => Ok(doc),
-            None => panic!("API Key does not exist in entries.")
-        }
+        Ok(result)
     }
 
     pub async fn api_key_entry_exist(&self, api_key: &str) -> Result<bool, Box<dyn std::error::Error>> {
-        let result = self.get_api_key_entry(api_key).await;
+        let result = self.find_api_key_entry(api_key).await?;
 
         match result {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false)
+            Some(_) => Ok(true),
+            None => Ok(false)
         }
     }
 
@@ -74,15 +71,41 @@ impl Backend {
         Ok(())
     }
 
-    pub fn delete_api_key_entry(&self, api_key: &str) {
-        self.get_database();
+    pub async fn search_api_key_entries_with_roblox_id(&self, roblox_id: u64) -> Result<Option<ApiKey>, Box<dyn std::error::Error>> {
+        let database = self.get_database();
+        
+        let api_keys_collection: Collection<ApiKey> = database.collection("apiKeys");
+
+        let result = api_keys_collection.find_one(
+            doc! { 
+                "assign_owner": roblox_id.to_string()
+            },
+            None
+        ).await?;
+
+        Ok(result)
     }
 
-    pub fn search_api_key_entries_with_roblox_id(&self, roblox_id: u64) {
-        self.get_database();
+    pub async fn search_api_key_entries_with_discord_id(&self, discord_id: u64) -> Result<Option<ApiKey>, Box<dyn std::error::Error>> {
+        let database = self.get_database();
+        
+        let api_keys_collection: Collection<ApiKey> = database.collection("apiKeys");
+
+        let result = api_keys_collection.find_one(
+            doc! { 
+                "associated_discord_user": discord_id.to_string()
+            },
+            None
+        ).await?;
+
+        Ok(result)
     }
 
-    pub fn search_api_key_entries_with_discord_id(&self, discord_id: u64) {
-        self.get_database();
-    }   
+    pub async fn is_valid_api_key(&self, api_key: &str) -> Result<bool, Box<dyn std::error::Error>> {
+        let api_key_entry = self.find_api_key_entry(api_key).await?;
+        match api_key_entry {
+            Some(entry) => Ok(entry.enabled == true),
+            None => Ok(false)
+        }
+    }
 }
