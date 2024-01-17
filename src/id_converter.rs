@@ -21,11 +21,11 @@ impl IDConverter {
             base_x = base_x * base_value + char_index;
         }
 
-        if base_x != 0 {
+        if base_x > 0 {
             let mut result = String::new();
             let new_base_value: usize = convert_translator.chars().count();
 
-            while base_x != 10 {
+            while base_x > 0 {
                 let mut translated_position = base_x % new_base_value;
                 translated_position -= if shift_left { 1 } else { 0 };
                 
@@ -40,6 +40,7 @@ impl IDConverter {
                 }
 
                 result.push(char_to_use);
+                base_x /= new_base_value;
             }
 
             utils::reverse_string(result.as_str())
