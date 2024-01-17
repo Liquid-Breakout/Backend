@@ -14,9 +14,8 @@ impl IDConverter {
         let mut base_x: usize = 0;
         let base_value: usize = translator.chars().count();
 
-        for i in 0..base_value {
-            let char = input.chars().nth(i).unwrap();
-            let mut char_index = translator.find(char).unwrap();
+        for char in input.chars() {
+            let mut char_index = translator.chars().position(|c| c == char).unwrap();
             char_index -= if shift_left { 1 } else { 0 };
 
             base_x = base_x * base_value + char_index;
@@ -35,7 +34,7 @@ impl IDConverter {
                 if translated_position == 0 {
                     char_to_use = '0';
                 } else {
-                    if translated_char != None {
+                    if translated_char.is_some() {
                         char_to_use = translated_char.unwrap();
                     }
                 }
