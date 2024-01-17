@@ -56,7 +56,7 @@ impl IDConverter {
     }
 
     pub fn to_number(&self, input: String) -> Result<u128, Box<dyn std::error::Error>> {
-        let converted_to_base = self.convert_base(input, &self.alphabets, &self.numbers, false);
+        let converted_to_base = self.convert_base(utils::reverse_string(input.as_str()), &self.alphabets, &self.numbers, false);
         let id_from_converted = converted_to_base.parse::<u128>();
         match id_from_converted {
             Ok(id) => Ok(id),
