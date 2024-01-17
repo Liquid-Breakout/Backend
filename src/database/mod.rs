@@ -9,6 +9,6 @@ impl Backend {
         if Option::is_none(&self.mongo_client) {
             panic!("Database not connected!")
         }
-        self.mongo_client.clone().unwrap().default_database().unwrap()
+        self.mongo_client.clone().unwrap().database("MainCluster")
     }
 }
