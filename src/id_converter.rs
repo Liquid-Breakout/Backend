@@ -15,13 +15,13 @@ impl IDConverter {
         let base_value: usize = translator.chars().count();
 
         for char in input.chars() {
-            let mut char_index = translator.chars().position(|c| c == char).unwrap();
+            let mut char_index = translator.chars().position(|c| c == char).unwrap_or(0) + 1;
             char_index -= if shift_left { 1 } else { 0 };
 
             base_x = base_x * base_value + char_index;
         }
 
-        if base_x > 0 {
+        if base_x != 0 {
             let mut result = String::new();
             let new_base_value: usize = convert_translator.chars().count();
 
@@ -31,12 +31,8 @@ impl IDConverter {
                 
                 let translated_char = convert_translator.chars().nth(translated_position);
                 let mut char_to_use: char = '0';
-                if translated_position == 0 {
-                    char_to_use = '0';
-                } else {
-                    if translated_char.is_some() {
-                        char_to_use = translated_char.unwrap();
-                    }
+                if translated_char.is_some() {
+                    char_to_use = translated_char.unwrap();
                 }
 
                 result.push(char_to_use);
