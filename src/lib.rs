@@ -38,12 +38,12 @@ impl Backend {
     pub fn get_shareable_id(&self, id: String) -> Result<String, Box<dyn std::error::Error>> {
         let parsed_id = id.parse::<u64>();
         match parsed_id {
-            Ok(i) => self.id_generator.to_short(i.into()),
+            Ok(i) => self.id_generator.to_short(i),
             Err(_) => panic!("ID cannot be converted into integer.")
         }
     }
 
-    pub fn get_number_id(&self, id: String) -> Result<u128, Box<dyn std::error::Error>> {
+    pub fn get_number_id(&self, id: String) -> Result<u64, Box<dyn std::error::Error>> {
         self.id_generator.to_number(id)
     }
 }

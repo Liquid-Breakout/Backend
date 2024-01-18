@@ -49,15 +49,15 @@ impl IDConverter {
         Self { alphabets: alphabets.to_owned(), numbers: numbers.to_owned() }
     }
 
-    pub fn to_short(&self, input: u128) -> Result<String, Box<dyn std::error::Error>> {
+    pub fn to_short(&self, input: u64) -> Result<String, Box<dyn std::error::Error>> {
         let input = input.to_string();
         let converted_to_base = self.convert_base(input, &self.numbers, &self.alphabets, true);
         Ok(utils::reverse_string(converted_to_base.as_str()))
     }
 
-    pub fn to_number(&self, input: String) -> Result<u128, Box<dyn std::error::Error>> {
+    pub fn to_number(&self, input: String) -> Result<u64, Box<dyn std::error::Error>> {
         let converted_to_base = self.convert_base(utils::reverse_string(input.as_str()), &self.alphabets, &self.numbers, false);
-        let id_from_converted = converted_to_base.parse::<u128>();
+        let id_from_converted = converted_to_base.parse::<u64>();
         match id_from_converted {
             Ok(id) => Ok(id),
             Err(_) => panic!("Transformed ID is not a number. Input possibly error/corrupted.")
