@@ -80,7 +80,7 @@ impl Backend {
 
         let result = api_keys_collection.find_one(
             doc! { 
-                "assign_owner": roblox_id.to_string()
+                "assignOwner": roblox_id.to_string()
             },
             None
         ).await?;
@@ -95,7 +95,7 @@ impl Backend {
 
         let result = api_keys_collection.find_one(
             doc! { 
-                "associated_discord_user": discord_id.to_string()
+                "associatedDiscordUser": Some(discord_id.to_string())
             },
             None
         ).await?;
