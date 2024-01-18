@@ -6,13 +6,15 @@ use crate::IDConverter;
 use crate::utils::datetime_now;
 
 #[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct ApiKey {
     value: String,
+    #[serde(rename = "assignOwner")]
     assign_owner: String,
-    associated_discord_user: String,
+    #[serde(rename = "associatedDiscordUser")]
+    associated_discord_user: Option<String>,
     enabled: bool,
-    time_created: u128,
+    #[serde(rename = "timeCreated")]
+    time_created: f64,
 }
 
 impl Backend {
@@ -26,7 +28,7 @@ impl Backend {
             &"5432189076".to_string()
         );
 
-        let doc_count: u128 = api_keys_collection.count_documents(None, None).await?.into();
+        let doc_count: u64 = api_keys_collection.count_documents(None, None).await?;
         api_key_generator.to_short(doc_count * 8 + datetime_now() * 2)
     }
 
@@ -63,9 +65,9 @@ impl Backend {
         let doc = ApiKey {
             value: new_api_key,
             assign_owner: "None".to_string(),
-            associated_discord_user: "None".to_string(),
+            associated_discord_user: None,
             enabled: true,
-            time_created: datetime_now()
+            time_created: datetime_now() as f64
         };
         api_keys_collection.insert_one(doc, None).await?;
         Ok(())
