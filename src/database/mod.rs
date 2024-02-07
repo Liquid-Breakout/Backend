@@ -3,6 +3,7 @@ use mongodb::Database;
 use crate::Backend;
 
 pub mod api_keys;
+pub mod moderation;
 
 impl Backend {
     pub fn get_database(&self) -> Database {
