@@ -8,10 +8,9 @@ impl Backend {
             return Err("User does not own asset.".into())
         }
         let item_details = self.fetch_asset_details_internal(asset_id).await?;
-        println!("{:?}", item_details);
         if item_details.is_public_domain.is_none() || !item_details.is_public_domain.unwrap() {
             return Err("Asset is not for sale.".into())
-        } else if item_details.price_in_robux.is_none() || item_details.asset_type_id.unwrap() != structs::AssetType::Model {
+        } else if item_details.asset_type_id.is_none() || item_details.asset_type_id.unwrap() != structs::AssetType::Model {
             return Err("Asset type is not a Model.".into())
         } else if item_details.price_in_robux.is_some() && item_details.price_in_robux.unwrap() > 0 {
             return Err("Asset costs robux.".into())
