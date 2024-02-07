@@ -60,7 +60,7 @@ impl IDConverter {
         let id_from_converted = converted_to_base.parse::<u64>();
         match id_from_converted {
             Ok(id) => Ok(id),
-            Err(_) => panic!("Transformed ID is not a number. Input possibly error/corrupted.")
+            Err(_) => Err("Transformed ID is not a number. Input possibly error/corrupted.".into())
         }
     }
 }

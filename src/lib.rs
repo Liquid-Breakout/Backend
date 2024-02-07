@@ -39,7 +39,7 @@ impl Backend {
         let parsed_id = id.parse::<u64>();
         match parsed_id {
             Ok(i) => self.id_generator.to_short(i),
-            Err(_) => panic!("ID cannot be converted into integer.")
+            Err(_) => Err("ID cannot be converted into integer.".into())
         }
     }
 
