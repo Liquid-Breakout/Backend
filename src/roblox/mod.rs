@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use crate::Backend;  
 
 mod structs;
@@ -97,7 +95,7 @@ mod internal {
                 .headers(self.prepare_headers())
                 .send()
                 .await?;
-            
+
             Ok(request_result.json::<ItemDetails>().await?)
         }
     

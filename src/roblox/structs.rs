@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use serde_repr::{Serialize_repr, Deserialize_repr};
 
-#[derive(Serialize_repr, Deserialize_repr)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum AssetType {
     #[default]
@@ -12,7 +13,7 @@ pub enum AssetType {
     Decal = 13
 }
 
-#[derive(Serialize_repr, Deserialize_repr)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize_repr, Deserialize_repr)]
 #[repr(u8)]
 pub enum CreatorType {
     #[default]
