@@ -3,7 +3,7 @@ use crate::Backend;
 mod structs;
 
 impl Backend {
-    pub async fn whitelist_asset(&self, asset_id: i64, user_id_requesting: i64) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn whitelist_asset(&self, asset_id: u64, user_id_requesting: u64) -> Result<(), Box<dyn std::error::Error>> {
         if !self.user_own_asset_internal(user_id_requesting, asset_id).await? {
             panic!("User does not own asset.")
         }
@@ -63,7 +63,7 @@ mod internal {
             Ok(())
         }
     
-        pub(super) async fn user_own_asset_internal(&self, user_id: i64, asset_id: i64) -> Result<bool, Box<dyn std::error::Error>> {
+        pub(super) async fn user_own_asset_internal(&self, user_id: u64, asset_id: u64) -> Result<bool, Box<dyn std::error::Error>> {
             let formatted_url = format!(
                 "{}/users/{}/items/Asset/{}/is-owned",
                 INVENTORY_URL,
@@ -83,7 +83,7 @@ mod internal {
             }
         }
     
-        pub(super) async fn fetch_asset_details_internal(&self, asset_id: i64) -> Result<ItemDetails, Box<dyn std::error::Error>> {
+        pub(super) async fn fetch_asset_details_internal(&self, asset_id: u64) -> Result<ItemDetails, Box<dyn std::error::Error>> {
             let formatted_url = format!(
                 "{}/assets/{}/details",
                 ECONOMY_V2_URL,
@@ -99,7 +99,7 @@ mod internal {
             Ok(request_result.json::<ItemDetails>().await?)
         }
     
-        pub(super) async fn purchase_asset_internal(&self, asset_id: i64) -> Result<(), Box<dyn std::error::Error>> {
+        pub(super) async fn purchase_asset_internal(&self, asset_id: u64) -> Result<(), Box<dyn std::error::Error>> {
             let formatted_url = format!(
                 "{}/purchases/products/{}",
                 ECONOMY_V1_URL,
