@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(
-Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize, Copy,
-)]
+#[derive(Serialize_repr, Deserialize_repr)]
+#[repr(u8)]
 pub enum AssetType {
     #[default]
     Image = 1,
@@ -13,13 +12,12 @@ pub enum AssetType {
     Decal = 13
 }
 
-#[derive(
-Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize, Copy,
-)]
+#[derive(Serialize_repr, Deserialize_repr)]
+#[repr(u8)]
 pub enum CreatorType {
     #[default]
-    User = 1,
-    Group = 2,
+    User = 0,
+    Group = 1,
 }
 
 #[derive(
@@ -55,8 +53,6 @@ pub struct ItemDetails {
     pub creator: Creator,
     #[serde(rename = "PriceInRobux")]
     pub price_in_robux: Option<u64>,
-    #[serde(rename = "CollectibleItemId")]
-    pub collectible_item_id: Option<String>,
     #[serde(rename = "IsForSale")]
     pub is_for_sale: Option<bool>,
     #[serde(rename = "IsPublicDomain")]

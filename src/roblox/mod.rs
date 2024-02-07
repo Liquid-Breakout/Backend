@@ -97,19 +97,7 @@ mod internal {
                 .headers(self.prepare_headers())
                 .send()
                 .await?;
-    
-            println!("{:?}", request_result.text().await?);
-
-            let formatted_url = format!(
-                "{}/assets/{}/details",
-                ECONOMY_V2_URL,
-                asset_id
-            );
-            let request_result = Client::new()
-                .get(formatted_url)
-                .headers(self.prepare_headers())
-                .send()
-                .await?;
+            
             Ok(request_result.json::<ItemDetails>().await?)
         }
     
