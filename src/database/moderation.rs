@@ -18,13 +18,14 @@ pub struct BanEntry {
 }
 
 impl Backend {
-    pub async fn get_ban_collection(&self) -> Result<Vec<BanEntry>, Box<dyn std::error::Error>> {
+    // Note: + Send because #[OpenApi] complain about not being able to send between threads safely
+    pub async fn get_ban_collection(&self) -> Result<Vec<BanEntry>, Box<dyn std::error::Error + Send>> {
         let database = self.get_database();
 
         let collection: Collection<BanEntry> = database.collection("bannedplayers");
 
-        let cursor = collection.find(None, None).await?;
-        let result = cursor.try_collect().await?;
+        let cursor = collection.find(None, None).await.unwrap();
+        let result = cursor.try_collect().await.unwrap();
 
         Ok(result)
     }
