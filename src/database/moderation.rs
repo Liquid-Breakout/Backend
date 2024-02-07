@@ -19,7 +19,7 @@ pub struct BanEntry {
 
 impl Backend {
     // Note: + Send because #[OpenApi] complain about not being able to send between threads safely
-    pub async fn get_ban_collection(&self) -> Result<Vec<BanEntry>, Box<dyn std::error::Error + Send>> {
+    pub async fn get_ban_collection(&self) -> Result<Vec<BanEntry>, Box<dyn std::error::Error + Send + Sync>> {
         let database = self.get_database();
 
         let collection: Collection<BanEntry> = database.collection("bannedplayers");
@@ -45,7 +45,7 @@ impl Backend {
         Ok(result)
     }
 
-    pub async fn ban_player(&self, user_id: i64, duration_in_minutes: i64, moderator: &str, reason: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn ban_player(&self, user_id: i64, duration_in_minutes: i64, moderator: &str, reason: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let database = self.get_database();
 
         let collection: Collection<BanEntry> = database.collection("bannedplayers");
@@ -76,7 +76,7 @@ impl Backend {
         Ok(())
     }
 
-    pub async fn unban_player(&self, user_id: i64) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn unban_player(&self, user_id: i64) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let database = self.get_database();
 
         let collection: Collection<BanEntry> = database.collection("bannedplayers");
