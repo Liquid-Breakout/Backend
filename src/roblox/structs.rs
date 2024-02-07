@@ -39,7 +39,7 @@ pub struct Creator {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ItemDetails {
-    #[serde(rename = "Id")]
+    #[serde(rename = "AssetId")]
     pub id: i64,
     #[serde(rename = "TargetId")]
     pub target_id: i64,
