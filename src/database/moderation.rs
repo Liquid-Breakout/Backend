@@ -1,6 +1,6 @@
 use mongodb::{bson::doc, Collection};
 use serde::{ Deserialize, Serialize };
-use futures::stream::TryStreamExt;
+use futures::stream::StreamExt;
 
 use crate::Backend;
 use crate::utils::datetime_now;
@@ -19,13 +19,22 @@ pub struct BanEntry {
 
 impl Backend {
     // Note: + Send because #[OpenApi] complain about not being able to send between threads safely
-    pub async fn get_ban_collection(&self) -> Result<Vec<BanEntry>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_ban_collection(&self) -> Result<Vec<BanEntry>, Box<dyn std::error::Error>> {
         let database = self.get_database();
 
         let collection: Collection<BanEntry> = database.collection("bannedplayers");
 
-        let cursor = collection.find(None, None).await.unwrap();
-        let result = cursor.try_collect().await.unwrap();
+        let mut cursor = collection.find(None, None).await?;
+        let mut result: Vec<BanEntry> = Vec::new();
+
+        while let Some(stream) = cursor.next().await {
+            match stream {
+                Ok(document) => {
+                    result.push(document);
+                }
+                _ => {}
+            }
+        }
 
         Ok(result)
     }
@@ -45,14 +54,14 @@ impl Backend {
         Ok(result)
     }
 
-    pub async fn ban_player(&self, user_id: u64, duration_in_minutes: i32, moderator: &str, reason: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn ban_player(&self, user_id: u64, duration_in_minutes: i32, moderator: &str, reason: &str) -> Result<(), Box<dyn std::error::Error>> {
         let database = self.get_database();
 
         let collection: Collection<BanEntry> = database.collection("bannedplayers");
 
         let time_now: i64 = datetime_now() as i64;
         let banned_until = if duration_in_minutes != -1 { time_now as i64 + (duration_in_minutes * 60) as i64} else { -1 };
-        if let Ok(Some(_)) = self.find_ban_entry(user_id).await {
+        if self.find_ban_entry(user_id).await?.is_some() {
             let update = doc! { "$set": doc! {
                 "bannedTime": time_now,
                 "bannedUntil": banned_until,
@@ -76,12 +85,13 @@ impl Backend {
         Ok(())
     }
 
-    pub async fn unban_player(&self, user_id: u64) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn unban_player(&self, user_id: u64) -> Result<(), Box<dyn std::error::Error>> {
         let database = self.get_database();
 
         let collection: Collection<BanEntry> = database.collection("bannedplayers");
 
-        if let Ok(Some(_)) = self.find_ban_entry(user_id).await {
+        let found = self.find_ban_entry(user_id).await?;
+        if found.is_some() {
             collection.delete_one(doc! { "userId": user_id as i64}, None).await?;
         }
 
