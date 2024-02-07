@@ -27,24 +27,24 @@ Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserial
 )]
 pub struct Creator {
     #[serde(rename = "Id")]
-    pub id: u64,
+    pub id: i64,
     #[serde(rename = "HasVerifiedBadge")]
     pub has_verified_badge: bool,
     #[serde(rename = "CreatorType")]
     pub creator_type: CreatorType,
     #[serde(rename = "CreatorTargetId")]
-    pub target_id: u64,
+    pub target_id: i64,
     #[serde(rename = "Name")]
     pub name: String,
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ItemDetails {
     #[serde(rename = "Id")]
-    pub id: u64,
+    pub id: i64,
     #[serde(rename = "TargetId")]
-    pub target_id: u64,
+    pub target_id: i64,
     #[serde(rename = "ProductId")]
-    pub product_id: u64,
+    pub product_id: i64,
     #[serde(rename = "AssetTypeId")]
     pub asset_type_id: Option<AssetType>,
     #[serde(rename = "Name")]
