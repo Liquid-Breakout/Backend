@@ -13,12 +13,11 @@ pub enum AssetType {
     Decal = 13
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize_repr, Deserialize_repr)]
-#[repr(u8)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Default, Serialize, Deserialize)]
 pub enum CreatorType {
     #[default]
-    User = 0,
-    Group = 1,
+    User,
+    Group,
 }
 
 #[derive(
