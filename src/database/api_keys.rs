@@ -7,14 +7,14 @@ use crate::utils::datetime_now;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ApiKey {
-    value: String,
+    pub value: String,
     #[serde(rename = "assignOwner")]
-    assign_owner: String,
+    pub assign_owner: String,
     #[serde(rename = "associatedDiscordUser")]
-    associated_discord_user: Option<String>,
-    enabled: bool,
+    pub associated_discord_user: Option<String>,
+    pub enabled: bool,
     #[serde(rename = "timeCreated")]
-    time_created: f64,
+    pub time_created: f64,
 }
 
 impl Backend {

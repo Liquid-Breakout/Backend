@@ -8,13 +8,13 @@ use crate::utils::datetime_now;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BanEntry {
     #[serde(rename = "userId")]
-    user_id: i64,
+    pub user_id: i64,
     #[serde(rename = "bannedTime")]
-    banned_time: i64,
+    pub banned_time: i64,
     #[serde(rename = "bannedUntil")]
-    banned_until: i64,
-    moderator: String,
-    reason: String
+    pub banned_until: i64,
+    pub moderator: String,
+    pub reason: String
 }
 
 impl Backend {
