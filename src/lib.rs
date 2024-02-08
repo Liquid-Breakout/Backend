@@ -3,6 +3,7 @@ use id_converter::IDConverter;
 
 pub mod roblox;
 pub mod database;
+pub mod luau;
 mod id_converter;
 mod utils;
 pub struct Backend {

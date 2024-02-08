@@ -1,6 +1,7 @@
 use crate::Backend;  
 
 mod structs;
+mod rbxm;
 
 impl Backend {
     pub async fn whitelist_asset(&self, asset_id: u64, user_id_requesting: u64) -> Result<(), Box<dyn std::error::Error>> {
@@ -19,6 +20,10 @@ impl Backend {
         self.purchase_asset_internal(asset_id).await?;
         Ok(())
     }
+
+    pub async fn download_asset_bytes(&self, asset_id: u64) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+        self.download_asset_internal(asset_id).await
+    }
 }
 
 mod internal {
@@ -27,6 +32,7 @@ mod internal {
     use super::structs::{AssetPurchaseReq, ItemDetails};
 
     const AUTH_URL: &str = "https://auth.roblox.com";
+    const ASSETDELIVERY_URL: &str = "https://assetdelivery.roblox.com/v1";
     const ECONOMY_V1_URL: &str = "https://economy.roblox.com/v1";
     const ECONOMY_V2_URL: &str = "https://economy.roblox.com/v2";
     const INVENTORY_URL: &str = "https://inventory.roblox.com/v1";
@@ -61,6 +67,27 @@ mod internal {
     
             self.roblox_xcsrf_token = xcsrf;
             Ok(())
+        }
+
+        pub(super) async fn download_asset_internal(&self, asset_id: u64) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+            let formatted_url = format!(
+                "{}/assetId/{}",
+                ASSETDELIVERY_URL,
+                asset_id
+            );
+
+            let mut request_result = Client::new()
+                .get(formatted_url)
+                .headers(self.prepare_headers())
+                .send()
+                .await?;
+
+            let mut bytes = Vec::new();
+            while let Ok(Some(chunk)) = &request_result.chunk().await {
+                bytes.extend_from_slice(&chunk);
+            }
+
+            Ok(bytes)
         }
     
         pub(super) async fn user_own_asset_internal(&self, user_id: u64, asset_id: u64) -> Result<bool, Box<dyn std::error::Error>> {
