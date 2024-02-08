@@ -19,14 +19,11 @@ fn search_for_classnames<'a>(dom: &'a WeakDom, classnames: &Vec<&str>, instances
 }
 
 impl Backend {
-    pub fn dom_from_bytes(&self, bytes: Vec<u8>) -> Option<WeakDom> {
+    pub fn dom_from_bytes(&self, bytes: Vec<u8>) -> Result<WeakDom, Box<dyn std::error::Error>> {
         let cursor = Cursor::new(bytes);
         let buf_reader = BufReader::new(cursor);
 
-        if let Ok(dom) = rbx_binary::from_reader(buf_reader) {
-            return Some(dom)
-        }
-        None
+        Ok(rbx_binary::from_reader(buf_reader)?)
     }
 
     pub fn dom_find_scripts<'a>(&'a self, dom: &'a WeakDom) -> HashMap<String, String> {
