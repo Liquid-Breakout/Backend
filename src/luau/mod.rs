@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use full_moon::{ast::{Ast, Block, Prefix, Stmt, Suffix}, node::{self, Node}};
+use full_moon::{ast::{Ast, Block, Prefix, Stmt, Suffix}, node::Node};
 use crate::Backend;
 
 type Range = (usize, usize);
@@ -52,8 +52,8 @@ fn internal_find_from_visit<'a>(function_to_find: &str, block: &'a Block, usage_
 }
 
 impl Backend {
-    pub fn luau_ast_from_string(&self, source: String) -> Result<Ast, Box<dyn std::error::Error>> {
-        Ok(full_moon::parse(source.as_str())?)
+    pub fn luau_ast_from_string(&self, source: &String) -> Result<Ast, Box<dyn std::error::Error>> {
+        Ok(full_moon::parse(source)?)
     }
 
     pub fn luau_find_global_function_usage<'a>(&'a self, ast: &'a Ast, function_to_find: &str) -> HashMap<Range, Vec<&Suffix>> {
