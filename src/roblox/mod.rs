@@ -27,8 +27,8 @@ impl Backend {
 }
 
 mod internal {
-    use surf::{http::Method, RequestBuilder, Response, Url};
-    use crate::Backend; 
+    use reqwest::{Client, header};
+    use crate::{utils, Backend}; 
     use super::structs::{AssetPurchaseReq, ItemDetails};
 
     const AUTH_URL: &str = "https://auth.roblox.com";
@@ -39,53 +39,30 @@ mod internal {
     const XCSRF_HEADER: &str = "x-csrf-token";
 
     impl Backend {
-        pub(crate) fn construct_request(&self, url: &str, method: Method) -> Result<RequestBuilder, Box<dyn std::error::Error>>  {
-            let url = match Url::parse(url) {
-                Ok(url) => url,
-                Err(e) => return Err(e.to_string().into())
-            };
-
-            let builder = RequestBuilder::new(method, url)
-                .header(XCSRF_HEADER, self.roblox_xcsrf_token.to_owned())
-                .header("cookie", self.roblox_cookie.to_owned());
-
-            Ok(builder)
+        pub(super) fn prepare_headers(&self) -> header::HeaderMap {
+            let mut reqwest_headers = header::HeaderMap::new();
+    
+            // send help
+            let xcsrf_header = header::HeaderValue::from_static(utils::string_to_static_str(self.roblox_xcsrf_token.to_owned()));
+            reqwest_headers.insert(XCSRF_HEADER, xcsrf_header);
+            let mut cookie_header = header::HeaderValue::from_static(utils::string_to_static_str(self.roblox_cookie.to_owned()));
+            cookie_header.set_sensitive(true);
+            reqwest_headers.insert("cookie", cookie_header);
+    
+            reqwest_headers
         }
-
-        pub(crate) async fn receive_response(&self, request_builder: RequestBuilder) -> Result<Response, Box<dyn std::error::Error>> {
-            match request_builder.send().await {
-                Ok(res) => Ok(res),
-                Err(e) => Err(e.to_string().into())
-            }
-        }
-
-        pub(crate) async fn receive_response_as_string(&self, request_builder: RequestBuilder) -> Result<String, Box<dyn std::error::Error>> {
-            match request_builder.recv_string().await {
-                Ok(result) => Ok(result),
-                Err(e) => Err(e.to_string().into())
-            }
-        }
-
-        pub(crate) async fn receive_response_as_bytes(&self, request_builder: RequestBuilder) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
-            match request_builder.recv_bytes().await {
-                Ok(result) => Ok(result),
-                Err(e) => Err(e.to_string().into())
-            }
-        }
-
-        pub(crate) async fn receive_response_as_json<T: serde::de::DeserializeOwned>(&self, request_builder: RequestBuilder) -> Result<T, Box<dyn std::error::Error>> {
-            match request_builder.recv_json::<T>().await {
-                Ok(result) => Ok(result),
-                Err(e) => Err(e.to_string().into())
-            }
-        }
-
+    
         pub(crate) async fn refresh_xcsrf_token(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-            let request_result = self.construct_request(AUTH_URL, Method::Post)?.await?;
+            let request_result = Client::new()
+                .post(AUTH_URL)
+                .headers(self.prepare_headers())
+                .send()
+                .await?;
     
             let xcsrf = request_result
-                .header(XCSRF_HEADER)
-                .map(|x| x.as_str().to_string())
+                .headers()
+                .get(XCSRF_HEADER)
+                .map(|x| x.to_str().unwrap().to_string())
                 .unwrap();
     
             self.roblox_xcsrf_token = xcsrf;
@@ -99,8 +76,16 @@ mod internal {
                 asset_id
             );
 
-            let request_result = self.receive_response_as_bytes(self.construct_request(&formatted_url, Method::Get)?).await?;
-            Ok(request_result)
+            let request_result = Client::new()
+                .get(formatted_url)
+                .headers(self.prepare_headers())
+                .send()
+                .await?;
+            let mut content = std::io::Cursor::new(request_result.bytes().await?);
+            let mut bytes: Vec<u8> = Vec::new();
+            std::io::copy(&mut content, &mut bytes)?;
+
+            Ok(bytes)
         }
     
         pub(super) async fn user_own_asset_internal(&self, user_id: u64, asset_id: u64) -> Result<bool, Box<dyn std::error::Error>> {
@@ -111,8 +96,13 @@ mod internal {
                 asset_id
             );
     
-            let request_result = self.receive_response_as_string(self.construct_request(&formatted_url, Method::Get)?).await;
-            match request_result.unwrap_or(String::new()).parse::<bool>() {
+            let request_result = Client::new()
+                .get(formatted_url)
+                .headers(self.prepare_headers())
+                .send()
+                .await?;
+    
+            match request_result.text().await.unwrap_or(String::new()).parse::<bool>() {
                 Ok(res) => Ok(res),
                 Err(_) => Ok(false)
             }
@@ -125,10 +115,16 @@ mod internal {
                 asset_id
             );
     
-            Ok(self.receive_response_as_json::<ItemDetails>(self.construct_request(&formatted_url, Method::Get)?).await?)
+            let request_result = Client::new()
+                .get(formatted_url)
+                .headers(self.prepare_headers())
+                .send()
+                .await?;
+
+            Ok(request_result.json::<ItemDetails>().await?)
         }
     
-        pub(super) async fn purchase_asset_internal(&self, asset_id: u64) -> Result<bool, Box<dyn std::error::Error>> {
+        pub(super) async fn purchase_asset_internal(&self, asset_id: u64) -> Result<(), Box<dyn std::error::Error>> {
             let formatted_url = format!(
                 "{}/purchases/products/{}",
                 ECONOMY_V1_URL,
@@ -140,14 +136,14 @@ mod internal {
                 expected_price: 0,
             };
     
-            let builder = self.construct_request(&formatted_url, Method::Post)?
-                .body_json(&request_body)?;
-
-            let request_result = self.receive_response(builder).await;
-            match request_result {
-                Ok(res) => Ok(res.status() == 200),
-                Err(e) => Err(e)
-            }
+            Client::new()
+                .post(formatted_url)
+                .headers(self.prepare_headers())
+                .json(&request_body)
+                .send()
+                .await?;
+    
+            Ok(())
         }
     }
 }
