@@ -27,8 +27,8 @@ impl Backend {
 }
 
 mod internal {
-    use reqwest::{Client, header};
-    use crate::{utils, Backend}; 
+    use surf::{Client, Config};
+    use crate::Backend; 
     use super::structs::{AssetPurchaseReq, ItemDetails};
 
     const AUTH_URL: &str = "https://auth.roblox.com";
@@ -39,30 +39,21 @@ mod internal {
     const XCSRF_HEADER: &str = "x-csrf-token";
 
     impl Backend {
-        pub(super) fn prepare_headers(&self) -> header::HeaderMap {
-            let mut reqwest_headers = header::HeaderMap::new();
-    
-            // send help
-            let xcsrf_header = header::HeaderValue::from_static(utils::string_to_static_str(self.roblox_xcsrf_token.to_owned()));
-            reqwest_headers.insert(XCSRF_HEADER, xcsrf_header);
-            let mut cookie_header = header::HeaderValue::from_static(utils::string_to_static_str(self.roblox_cookie.to_owned()));
-            cookie_header.set_sensitive(true);
-            reqwest_headers.insert("cookie", cookie_header);
-    
-            reqwest_headers
+        pub(crate) fn construct_request_client(&self) -> Result<Client, Box<dyn std::error::Error>>  {
+            let client: Client = Config::new()
+                .add_header(XCSRF_HEADER, self.roblox_xcsrf_token.to_owned())?
+                .add_header("cookie", self.roblox_cookie.to_owned())?
+                .try_into()?;
+
+            Ok(client)
         }
-    
+
         pub(crate) async fn refresh_xcsrf_token(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-            let request_result = Client::new()
-                .post(AUTH_URL)
-                .headers(self.prepare_headers())
-                .send()
-                .await?;
+            let request_result = self.construct_request_client()?.post(AUTH_URL).await?;
     
             let xcsrf = request_result
-                .headers()
-                .get(XCSRF_HEADER)
-                .map(|x| x.to_str().unwrap().to_string())
+                .header(XCSRF_HEADER)
+                .map(|x| x.as_str().to_string())
                 .unwrap();
     
             self.roblox_xcsrf_token = xcsrf;
@@ -76,16 +67,8 @@ mod internal {
                 asset_id
             );
 
-            let mut request_result = Client::new()
-                .get(formatted_url)
-                .headers(self.prepare_headers())
-                .send()
-                .await?;
-
-            let mut bytes = Vec::new();
-            while let Ok(Some(chunk)) = &request_result.chunk().await {
-                bytes.extend_from_slice(&chunk);
-            }
+            let mut request_result = self.construct_request_client()?.get(formatted_url).await?;
+            let bytes = request_result.body_bytes().await?;
 
             Ok(bytes)
         }
@@ -98,13 +81,8 @@ mod internal {
                 asset_id
             );
     
-            let request_result = Client::new()
-                .get(formatted_url)
-                .headers(self.prepare_headers())
-                .send()
-                .await?;
-    
-            match request_result.text().await.unwrap_or(String::new()).parse::<bool>() {
+            let mut request_result = self.construct_request_client()?.get(formatted_url).await?;
+            match request_result.body_string().await.unwrap_or(String::new()).parse::<bool>() {
                 Ok(res) => Ok(res),
                 Err(_) => Ok(false)
             }
@@ -117,13 +95,8 @@ mod internal {
                 asset_id
             );
     
-            let request_result = Client::new()
-                .get(formatted_url)
-                .headers(self.prepare_headers())
-                .send()
-                .await?;
-
-            Ok(request_result.json::<ItemDetails>().await?)
+            let mut request_result = self.construct_request_client()?.get(formatted_url).await?;
+            Ok(request_result.body_json::<ItemDetails>().await?)
         }
     
         pub(super) async fn purchase_asset_internal(&self, asset_id: u64) -> Result<(), Box<dyn std::error::Error>> {
@@ -138,11 +111,9 @@ mod internal {
                 expected_price: 0,
             };
     
-            Client::new()
+            self.construct_request_client()?
                 .post(formatted_url)
-                .headers(self.prepare_headers())
-                .json(&request_body)
-                .send()
+                .body_json(&request_body)?
                 .await?;
     
             Ok(())
