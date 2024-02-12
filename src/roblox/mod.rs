@@ -95,6 +95,8 @@ mod internal {
                 _ => {}
             };
 
+            println!("download {}", request_result.status().as_u16());
+
             let mut content = std::io::Cursor::new(request_result.bytes().await?);
             let mut bytes: Vec<u8> = Vec::new();
             std::io::copy(&mut content, &mut bytes)?;
