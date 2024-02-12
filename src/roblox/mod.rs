@@ -27,7 +27,7 @@ impl Backend {
 }
 
 mod internal {
-    use surf::{http::Method, Client, Config, RequestBuilder, Response, Url};
+    use surf::{http::Method, RequestBuilder, Response, Url};
     use crate::Backend; 
     use super::structs::{AssetPurchaseReq, ItemDetails};
 
