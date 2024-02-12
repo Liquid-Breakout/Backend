@@ -66,6 +66,22 @@ pub struct AssetPurchaseReq {
     pub expected_price: u64
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AssetDeliveryLocation {
+    #[serde(rename = "assetFormat")]
+    pub asset_format: String,
+    pub location: String
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AssetDeliveryResponse {
+    pub locations: Vec<AssetDeliveryLocation>,
+    #[serde(rename = "requestId")]
+    pub request_id: String,
+    #[serde(rename = "assetTypeId")]
+    pub asset_type_id: AssetType,
+}
+
 // {"errors":[{"code":0,"message":"User is not authorized to access Asset."}]}
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RobloxError {
@@ -74,6 +90,6 @@ pub struct RobloxError {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AssetDeliveryError {
+pub struct RobloxApiError {
     pub errors: Vec<RobloxError>
 }

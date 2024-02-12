@@ -30,10 +30,10 @@ mod internal {
     use reqwest::{header, Client};
     use surf::StatusCode;
     use crate::{utils, Backend}; 
-    use super::structs::{AssetDeliveryError, AssetPurchaseReq, ItemDetails};
+    use super::structs::{AssetDeliveryResponse, AssetPurchaseReq, ItemDetails, RobloxApiError};
 
     const AUTH_URL: &str = "https://auth.roblox.com";
-    const ASSETDELIVERY_URL: &str = "https://assetdelivery.roblox.com/v1";
+    const ASSETDELIVERY_URL: &str = "https://assetdelivery.roblox.com/v2";
     const ECONOMY_V1_URL: &str = "https://economy.roblox.com/v1";
     const ECONOMY_V2_URL: &str = "https://economy.roblox.com/v2";
     const INVENTORY_URL: &str = "https://inventory.roblox.com/v1";
@@ -77,7 +77,32 @@ mod internal {
                 asset_id
             );
 
-            let mut request_result = surf::get(formatted_url)
+            let asset_response = Client::new()
+                .get(formatted_url)
+                .headers(self.prepare_headers())
+                .send()
+                .await?;
+
+            if !asset_response.status().is_success() {
+                let status_code = asset_response.status().as_u16();
+                return match asset_response.json::<RobloxApiError>().await {
+                    Ok(info) => {
+                        match info.errors.first() {
+                            Some(err) => Err(format!("Roblox returned error code: {}, message: {}", status_code, err.message.clone()).into()),
+                            None => Err(format!("Roblox returned error code: {}", status_code).into())
+                        }
+                    },
+                    Err(_) => Err(format!("Roblox returned error code: {}", status_code).into())
+                }
+            }
+
+            let asset_info = asset_response.json::<AssetDeliveryResponse>().await?;
+            let location = match asset_info.locations.first() {
+                Some(location) => location,
+                None => return Err("Roblox did not return location for asset.".into())
+            };
+
+            let mut request_result = surf::get(&location.location)
                 .header(XCSRF_HEADER, self.roblox_xcsrf_token.clone())
                 .header("Cookie", format!(".ROBLOSECURITY={}", self.roblox_cookie.clone()))
                 .send()
@@ -85,25 +110,9 @@ mod internal {
 
             match request_result.status() {
                 StatusCode::Ok => {},
-                StatusCode::BadRequest => {
-                    let info = request_result.body_json::<AssetDeliveryError>().await?;
-                    return match info.errors.first() {
-                        Some(err) => Err(err.message.clone().into()),
-                        None => Err("Unknown error.".into()) // Just in case
-                    }
-                },
-                StatusCode::NotFound => {
-                    let info = request_result.body_json::<AssetDeliveryError>().await?;
-                    return match info.errors.first() {
-                        Some(err) => Err(err.message.clone().into()),
-                        None => Err("Unknown error.".into()) // Just in case
-                    }
-                },
-                StatusCode::Unauthorized => return Err("Invalid cookie.".into()),
-                StatusCode::TooManyRequests => return Err("Requesting too many requests.".into()),
                 _ => {
                     let status_code = request_result.status();
-                    return match request_result.body_json::<AssetDeliveryError>().await {
+                    return match request_result.body_json::<RobloxApiError>().await {
                         Ok(info) => {
                             match info.errors.first() {
                                 Some(err) => Err(format!("Roblox returned error code: {}, message: {}", status_code, err.message.clone()).into()),
