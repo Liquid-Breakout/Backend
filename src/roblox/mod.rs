@@ -33,7 +33,7 @@ mod internal {
     use super::structs::{AssetDeliveryResponse, AssetPurchaseReq, ItemDetails, RobloxApiError};
 
     const AUTH_URL: &str = "https://auth.roblox.com";
-    const ASSETDELIVERY_URL: &str = "https://assetdelivery.roblox.com/v2";
+    const ASSETDELIVERY_URL: &str = "https://assetdelivery.roblox.com/v1";
     const ECONOMY_V1_URL: &str = "https://economy.roblox.com/v1";
     const ECONOMY_V2_URL: &str = "https://economy.roblox.com/v2";
     const INVENTORY_URL: &str = "https://inventory.roblox.com/v1";
@@ -77,15 +77,15 @@ mod internal {
                 asset_id
             );
 
-            let asset_response = Client::new()
-                .get(formatted_url)
-                .headers(self.prepare_headers())
+            let mut cdn_redirect_response = surf::get(formatted_url)
+                .header(XCSRF_HEADER, self.roblox_xcsrf_token.clone())
+                .header("Cookie", format!(".ROBLOSECURITY={}", self.roblox_cookie.clone()))
                 .send()
                 .await?;
 
-            if !asset_response.status().is_success() {
-                let status_code = asset_response.status().as_u16();
-                return match asset_response.json::<RobloxApiError>().await {
+            if cdn_redirect_response.status() != 302 {
+                let status_code = cdn_redirect_response.status();
+                return match cdn_redirect_response.body_json::<RobloxApiError>().await {
                     Ok(info) => {
                         match info.errors.first() {
                             Some(err) => Err(format!("Roblox returned error code: {}, message: {}", status_code, err.message.clone()).into()),
@@ -96,13 +96,12 @@ mod internal {
                 }
             }
 
-            let asset_info = asset_response.json::<AssetDeliveryResponse>().await?;
-            let location = match asset_info.locations.first() {
-                Some(location) => location,
+            let location = match cdn_redirect_response.header("Location") {
+                Some(location) => location.as_str(),
                 None => return Err("Roblox did not return location for asset.".into())
             };
 
-            let mut request_result = surf::get(&location.location)
+            let mut request_result = surf::get(location)
                 .header(XCSRF_HEADER, self.roblox_xcsrf_token.clone())
                 .header("Cookie", format!(".ROBLOSECURITY={}", self.roblox_cookie.clone()))
                 .send()
