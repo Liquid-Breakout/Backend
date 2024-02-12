@@ -27,7 +27,7 @@ impl Backend {
 }
 
 mod internal {
-    use surf::{Client, Config};
+    use surf::{http::Method, Client, Config, RequestBuilder, Response, Url};
     use crate::Backend; 
     use super::structs::{AssetPurchaseReq, ItemDetails};
 
@@ -39,17 +39,46 @@ mod internal {
     const XCSRF_HEADER: &str = "x-csrf-token";
 
     impl Backend {
-        pub(crate) fn construct_request_client(&self) -> Result<Client, Box<dyn std::error::Error>>  {
-            let client: Client = Config::new()
-                .add_header(XCSRF_HEADER, self.roblox_xcsrf_token.to_owned()).unwrap()
-                .add_header("cookie", self.roblox_cookie.to_owned()).unwrap()
-                .try_into().unwrap();
+        pub(crate) fn construct_request(&self, url: &str, method: Method) -> Result<RequestBuilder, Box<dyn std::error::Error>>  {
+            let url = Url::parse(url)?;
 
-            Ok(client)
+            let builder = RequestBuilder::new(method, url)
+                .header(XCSRF_HEADER, self.roblox_xcsrf_token.to_owned())
+                .header("cookie", self.roblox_cookie.to_owned());
+
+            Ok(builder)
+        }
+
+        pub(crate) async fn receive_response(&self, request_builder: RequestBuilder) -> Result<Response, Box<dyn std::error::Error>> {
+            match request_builder.send().await {
+                Ok(res) => Ok(res),
+                Err(e) => Err(e.to_string().into())
+            }
+        }
+
+        pub(crate) async fn receive_response_as_string(&self, request_builder: RequestBuilder) -> Result<String, Box<dyn std::error::Error>> {
+            match request_builder.recv_string().await {
+                Ok(result) => Ok(result),
+                Err(e) => Err(e.to_string().into())
+            }
+        }
+
+        pub(crate) async fn receive_response_as_bytes(&self, request_builder: RequestBuilder) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+            match request_builder.recv_bytes().await {
+                Ok(result) => Ok(result),
+                Err(e) => Err(e.to_string().into())
+            }
+        }
+
+        pub(crate) async fn receive_response_as_json<T: serde::de::DeserializeOwned>(&self, request_builder: RequestBuilder) -> Result<T, Box<dyn std::error::Error>> {
+            match request_builder.recv_json::<T>().await {
+                Ok(result) => Ok(result),
+                Err(e) => Err(e.to_string().into())
+            }
         }
 
         pub(crate) async fn refresh_xcsrf_token(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-            let request_result = self.construct_request_client()?.post(AUTH_URL).await?;
+            let request_result = self.construct_request(AUTH_URL, Method::Post)?.await?;
     
             let xcsrf = request_result
                 .header(XCSRF_HEADER)
@@ -67,10 +96,8 @@ mod internal {
                 asset_id
             );
 
-            let mut request_result = self.construct_request_client()?.get(formatted_url).await?;
-            let bytes = request_result.body_bytes().await?;
-
-            Ok(bytes)
+            let request_result = self.receive_response_as_bytes(self.construct_request(&formatted_url, Method::Get)?).await?;
+            Ok(request_result)
         }
     
         pub(super) async fn user_own_asset_internal(&self, user_id: u64, asset_id: u64) -> Result<bool, Box<dyn std::error::Error>> {
@@ -81,8 +108,8 @@ mod internal {
                 asset_id
             );
     
-            let mut request_result = self.construct_request_client()?.get(formatted_url).await?;
-            match request_result.body_string().await.unwrap_or(String::new()).parse::<bool>() {
+            let request_result = self.receive_response_as_string(self.construct_request(&formatted_url, Method::Get)?).await;
+            match request_result.unwrap_or(String::new()).parse::<bool>() {
                 Ok(res) => Ok(res),
                 Err(_) => Ok(false)
             }
@@ -95,11 +122,10 @@ mod internal {
                 asset_id
             );
     
-            let mut request_result = self.construct_request_client()?.get(formatted_url).await?;
-            Ok(request_result.body_json::<ItemDetails>().await?)
+            Ok(self.receive_response_as_json::<ItemDetails>(self.construct_request(&formatted_url, Method::Get)?).await?)
         }
     
-        pub(super) async fn purchase_asset_internal(&self, asset_id: u64) -> Result<(), Box<dyn std::error::Error>> {
+        pub(super) async fn purchase_asset_internal(&self, asset_id: u64) -> Result<bool, Box<dyn std::error::Error>> {
             let formatted_url = format!(
                 "{}/purchases/products/{}",
                 ECONOMY_V1_URL,
@@ -111,12 +137,14 @@ mod internal {
                 expected_price: 0,
             };
     
-            self.construct_request_client()?
-                .post(formatted_url)
-                .body_json(&request_body)?
-                .await?;
-    
-            Ok(())
+            let builder = self.construct_request(&formatted_url, Method::Post)?
+                .body_json(&request_body)?;
+
+            let request_result = self.receive_response(builder).await;
+            match request_result {
+                Ok(res) => Ok(res.status() == 200),
+                Err(e) => Err(e)
+            }
         }
     }
 }
