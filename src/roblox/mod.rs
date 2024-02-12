@@ -27,9 +27,9 @@ impl Backend {
 }
 
 mod internal {
-    use reqwest::{Client, header};
+    use reqwest::{header, Client};
     use crate::{utils, Backend}; 
-    use super::structs::{AssetPurchaseReq, ItemDetails};
+    use super::structs::{AssetDeliveryError, AssetPurchaseReq, ItemDetails};
 
     const AUTH_URL: &str = "https://auth.roblox.com";
     const ASSETDELIVERY_URL: &str = "https://assetdelivery.roblox.com/v1";
@@ -47,7 +47,7 @@ mod internal {
             reqwest_headers.insert(XCSRF_HEADER, xcsrf_header);
             let mut cookie_header = header::HeaderValue::from_static(utils::string_to_static_str(self.roblox_cookie.to_owned()));
             cookie_header.set_sensitive(true);
-            reqwest_headers.insert("cookie", cookie_header);
+            reqwest_headers.insert(header::COOKIE, cookie_header);
     
             reqwest_headers
         }
@@ -81,6 +81,20 @@ mod internal {
                 .headers(self.prepare_headers())
                 .send()
                 .await?;
+
+            match request_result.status().as_u16() {
+                400 => {
+                    let info = request_result.json::<AssetDeliveryError>().await?;
+                    return match info.errors.first() {
+                        Some(err) => Err(err.message.clone().into()),
+                        None => Err("Unknown error.".into()) // Just in case
+                    }
+                },
+                401 => return Err("Invalid cookie.".into()),
+                429 => return Err("Requesting too many requests.".into()),
+                _ => {}
+            };
+
             let mut content = std::io::Cursor::new(request_result.bytes().await?);
             let mut bytes: Vec<u8> = Vec::new();
             std::io::copy(&mut content, &mut bytes)?;

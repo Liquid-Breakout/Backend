@@ -65,3 +65,15 @@ pub struct AssetPurchaseReq {
     #[serde(rename = "expectedPrice")]
     pub expected_price: u64
 }
+
+// {"errors":[{"code":0,"message":"User is not authorized to access Asset."}]}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct RobloxError {
+    pub code: u16,
+    pub message: String
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AssetDeliveryError {
+    pub errors: Vec<RobloxError>
+}
