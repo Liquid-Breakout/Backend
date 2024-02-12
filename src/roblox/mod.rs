@@ -71,7 +71,7 @@ mod internal {
 
         pub(super) async fn download_asset_internal(&self, asset_id: u64) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
             let formatted_url = format!(
-                "{}/assetId/{}",
+                "{}/asset/{}",
                 ASSETDELIVERY_URL,
                 asset_id
             );
