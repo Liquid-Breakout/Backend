@@ -41,9 +41,9 @@ mod internal {
     impl Backend {
         pub(crate) fn construct_request_client(&self) -> Result<Client, Box<dyn std::error::Error>>  {
             let client: Client = Config::new()
-                .add_header(XCSRF_HEADER, self.roblox_xcsrf_token.to_owned())?
-                .add_header("cookie", self.roblox_cookie.to_owned())?
-                .try_into()?;
+                .add_header(XCSRF_HEADER, self.roblox_xcsrf_token.to_owned()).unwrap()
+                .add_header("cookie", self.roblox_cookie.to_owned()).unwrap()
+                .try_into().unwrap();
 
             Ok(client)
         }
