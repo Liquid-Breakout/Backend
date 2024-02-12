@@ -27,7 +27,8 @@ impl Backend {
 }
 
 mod internal {
-    use reqwest::{header, Client, StatusCode};
+    use reqwest::{header, Client};
+    use surf::StatusCode;
     use crate::{utils, Backend}; 
     use super::structs::{AssetDeliveryError, AssetPurchaseReq, ItemDetails};
 
@@ -76,37 +77,45 @@ mod internal {
                 asset_id
             );
 
-            let request_result = Client::new()
-                .get(formatted_url)
-                .headers(self.prepare_headers())
+            let mut request_result = surf::get(formatted_url)
+                .header(XCSRF_HEADER, self.roblox_xcsrf_token.clone())
+                .header("Cookie", self.roblox_cookie.clone())
                 .send()
                 .await?;
 
             match request_result.status() {
-                StatusCode::OK => {},
-                StatusCode::BAD_REQUEST => {
-                    let info = request_result.json::<AssetDeliveryError>().await?;
+                StatusCode::Ok => {},
+                StatusCode::BadRequest => {
+                    let info = request_result.body_json::<AssetDeliveryError>().await?;
                     return match info.errors.first() {
                         Some(err) => Err(err.message.clone().into()),
                         None => Err("Unknown error.".into()) // Just in case
                     }
                 },
-                StatusCode::NOT_FOUND => {
-                    let info = request_result.json::<AssetDeliveryError>().await?;
+                StatusCode::NotFound => {
+                    let info = request_result.body_json::<AssetDeliveryError>().await?;
                     return match info.errors.first() {
                         Some(err) => Err(err.message.clone().into()),
                         None => Err("Unknown error.".into()) // Just in case
                     }
                 },
-                StatusCode::UNAUTHORIZED => return Err("Invalid cookie.".into()),
-                StatusCode::TOO_MANY_REQUESTS => return Err("Requesting too many requests.".into()),
-                _ => return Err(format!("Unhandled error code: {}", request_result.status().as_u16()).into())
+                StatusCode::Unauthorized => return Err("Invalid cookie.".into()),
+                StatusCode::TooManyRequests => return Err("Requesting too many requests.".into()),
+                _ => {
+                    let status_code = request_result.status();
+                    return match request_result.body_json::<AssetDeliveryError>().await {
+                        Ok(info) => {
+                            match info.errors.first() {
+                                Some(err) => Err(format!("Roblox returned error code: {}, message: {}", status_code, err.message.clone()).into()),
+                                None => Err(format!("Roblox returned error code: {}", status_code).into())
+                            }
+                        },
+                        Err(_) => Err(format!("Roblox returned error code: {}", status_code).into())
+                    }
+                }
             };
 
-            let mut content = std::io::Cursor::new(request_result.bytes().await?);
-            let mut bytes: Vec<u8> = Vec::new();
-            std::io::copy(&mut content, &mut bytes)?;
-
+            let bytes: Vec<u8> = request_result.body_bytes().await?;
             Ok(bytes)
         }
     
