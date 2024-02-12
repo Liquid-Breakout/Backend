@@ -40,7 +40,10 @@ mod internal {
 
     impl Backend {
         pub(crate) fn construct_request(&self, url: &str, method: Method) -> Result<RequestBuilder, Box<dyn std::error::Error>>  {
-            let url = Url::parse(url)?;
+            let url = match Url::parse(url) {
+                Ok(url) => url,
+                Err(e) => return Err(e.to_string().into())
+            };
 
             let builder = RequestBuilder::new(method, url)
                 .header(XCSRF_HEADER, self.roblox_xcsrf_token.to_owned())
