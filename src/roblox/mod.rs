@@ -46,7 +46,7 @@ mod internal {
             // send help
             let xcsrf_header = header::HeaderValue::from_static(utils::string_to_static_str(self.roblox_xcsrf_token.to_owned()));
             reqwest_headers.insert(XCSRF_HEADER, xcsrf_header);
-            let mut cookie_header = header::HeaderValue::from_static(utils::string_to_static_str(self.roblox_cookie.to_owned()));
+            let mut cookie_header = header::HeaderValue::from_static(utils::string_to_static_str(format!(".ROBLOSECURITY={}", self.roblox_cookie.to_owned())));
             cookie_header.set_sensitive(true);
             reqwest_headers.insert(header::COOKIE, cookie_header);
     
@@ -79,7 +79,7 @@ mod internal {
 
             let mut request_result = surf::get(formatted_url)
                 .header(XCSRF_HEADER, self.roblox_xcsrf_token.clone())
-                .header("Cookie", self.roblox_cookie.clone())
+                .header("Cookie", format!(".ROBLOSECURITY={}", self.roblox_cookie.clone()))
                 .send()
                 .await?;
 
