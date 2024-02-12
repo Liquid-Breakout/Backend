@@ -27,7 +27,7 @@ impl Backend {
 }
 
 mod internal {
-    use reqwest::{header, Client};
+    use reqwest::{header, Client, StatusCode};
     use crate::{utils, Backend}; 
     use super::structs::{AssetDeliveryError, AssetPurchaseReq, ItemDetails};
 
@@ -82,24 +82,25 @@ mod internal {
                 .send()
                 .await?;
 
-            match request_result.status().as_u16() {
-                400 => {
+            match request_result.status() {
+                StatusCode::OK => {},
+                StatusCode::BAD_REQUEST => {
                     let info = request_result.json::<AssetDeliveryError>().await?;
                     return match info.errors.first() {
                         Some(err) => Err(err.message.clone().into()),
                         None => Err("Unknown error.".into()) // Just in case
                     }
                 },
-                404 => {
+                StatusCode::NOT_FOUND => {
                     let info = request_result.json::<AssetDeliveryError>().await?;
                     return match info.errors.first() {
                         Some(err) => Err(err.message.clone().into()),
                         None => Err("Unknown error.".into()) // Just in case
                     }
                 },
-                401 => return Err("Invalid cookie.".into()),
-                429 => return Err("Requesting too many requests.".into()),
-                _ => {}
+                StatusCode::UNAUTHORIZED => return Err("Invalid cookie.".into()),
+                StatusCode::TOO_MANY_REQUESTS => return Err("Requesting too many requests.".into()),
+                _ => return Err(format!("Unhandled error code: {}", request_result.status().as_u16()).into())
             };
 
             let mut content = std::io::Cursor::new(request_result.bytes().await?);
