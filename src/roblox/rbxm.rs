@@ -7,6 +7,7 @@ use crate::Backend;
 
 fn search_for_classnames<'a>(dom: &'a WeakDom, classnames: &Vec<&str>, instances: &mut HashMap<Vec<&'a str>, &'a Instance>, mut names: Vec<&'a str>, instance: &'a Instance) {
     names.push(instance.name.as_str());
+    println!("cur names {:?}", names);
     for &child_ref in instance.children() {
         let instance = dom.get_by_ref(child_ref).unwrap();
         if classnames.contains(&instance.class.as_str()) {
