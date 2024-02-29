@@ -10,7 +10,8 @@ fn search_for_classnames<'a>(dom: &'a WeakDom, classnames: &Vec<&str>, instances
     for &child_ref in instance.children() {
         let instance = dom.get_by_ref(child_ref).unwrap();
         if classnames.contains(&instance.class.as_str()) {
-            instances.insert(names.clone(), &instance);
+            println!("inserting {:?}", names.clone());
+            instances.insert(names.clone(), instance);
         }
 
         search_for_classnames(dom, classnames, instances, names.clone(), instance);
