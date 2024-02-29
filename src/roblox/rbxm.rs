@@ -5,8 +5,8 @@ use rbx_dom_weak::{WeakDom, Instance};
 use rbx_types::Variant;
 use crate::Backend;
 
-fn search_for_classnames<'a>(dom: &'a WeakDom, classnames: &Vec<&str>, instances: &mut HashMap<Vec<&'a str>, &'a Instance>, mut names: Vec<&'a str>, instance: &'a Instance) {
-    names.push(instance.name.as_str());
+fn search_for_classnames<'a>(dom: &'a WeakDom, classnames: &Vec<&str>, instances: &mut HashMap<Vec<String>, &'a Instance>, mut names: Vec<String>, instance: &'a Instance) {
+    names.push(instance.name.clone());
     for &child_ref in instance.children() {
         let instance = dom.get_by_ref(child_ref).unwrap();
         if classnames.contains(&instance.class.as_str()) {
@@ -29,12 +29,11 @@ impl Backend {
         let mut scripts: HashMap<String, String> = HashMap::new();
 
         let classnames: Vec<&str> = vec!["Script", "LocalScript", "ModuleScript"];
-        let mut instances: HashMap<Vec<&str>, &Instance> = HashMap::new();
-        let names: Vec<&str> = Vec::new();
+        let mut instances: HashMap<Vec<String>, &Instance> = HashMap::new();
 
         for &instance_ref in dom.root().children() {
             if let Some(instance) = dom.get_by_ref(instance_ref) {
-                search_for_classnames(&dom, &classnames, &mut instances, names.clone(), instance);
+                search_for_classnames(&dom, &classnames, &mut instances, Vec::new(), instance);
             }
         }
 
