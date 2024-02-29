@@ -8,13 +8,12 @@ use crate::Backend;
 fn search_for_classnames<'a>(dom: &'a WeakDom, classnames: &Vec<&str>, instances: &mut HashMap<Vec<&'a str>, &'a Instance>, mut names: Vec<&'a str>, instance: &'a Instance) {
     names.push(instance.name.as_str());
     for &child_ref in instance.children() {
-        if let Some(instance) =  dom.get_by_ref(child_ref) {
-            if classnames.contains(&instance.class.as_str()) {
-                instances.insert(names.clone(), &instance);
-            }
-
-            search_for_classnames(dom, classnames, instances, names.clone(), &instance);
+        let instance = dom.get_by_ref(child_ref).unwrap();
+        if classnames.contains(&instance.class.as_str()) {
+            instances.insert(names.clone(), &instance);
         }
+
+        search_for_classnames(dom, classnames, instances, names.clone(), instance);
     }
 }
 
@@ -31,17 +30,19 @@ impl Backend {
 
         let classnames: Vec<&str> = vec!["Script", "LocalScript", "ModuleScript"];
         let mut instances: HashMap<Vec<&str>, &Instance> = HashMap::new();
+        let names: Vec<&str> = Vec::new();
+
         for &instance_ref in dom.root().children() {
-            if let Some(instance) = &dom.get_by_ref(instance_ref) {
-                search_for_classnames(&dom, &classnames, &mut instances, Vec::new(), instance);
+            if let Some(instance) = dom.get_by_ref(instance_ref) {
+                search_for_classnames(&dom, &classnames, &mut instances, names.clone(), instance);
             }
         }
 
-        for e in instances {
-            let source = e.1.properties.get("Source").unwrap();
+        for (path, instance) in instances.into_iter() {
+            let source = instance.properties.get("Source").unwrap();
             match source {
                 Variant::String(src) => {
-                    let path = e.0.join(".");
+                    let path = path.join(".");
                     scripts.insert(path, src.to_string());
                 },
                 _ => {}
