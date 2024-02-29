@@ -7,7 +7,6 @@ use crate::Backend;
 
 fn search_for_classnames<'a>(dom: &'a WeakDom, classnames: &Vec<&str>, instances: &mut HashMap<Vec<&'a str>, &'a Instance>, mut names: Vec<&'a str>, instance: &'a Instance) {
     names.push(instance.name.as_str());
-    println!("cur names {:?}", names);
     for &child_ref in instance.children() {
         let instance = dom.get_by_ref(child_ref).unwrap();
         if classnames.contains(&instance.class.as_str()) {
@@ -43,8 +42,9 @@ impl Backend {
             let source = instance.properties.get("Source").unwrap();
             match source {
                 Variant::String(src) => {
-                    let path = path.join(".");
-                    scripts.insert(path, src.to_string());
+                    let joined_path = path.join(".");
+                    println!("path {:?}, joined {:?}", path, joined_path);
+                    scripts.insert(joined_path, src.to_string());
                 },
                 _ => {}
             };
