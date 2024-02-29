@@ -10,8 +10,9 @@ fn search_for_classnames<'a>(dom: &'a WeakDom, classnames: &Vec<&str>, instances
     for &child_ref in instance.children() {
         let instance = dom.get_by_ref(child_ref).unwrap();
         if classnames.contains(&instance.class.as_str()) {
-            println!("inserting {:?}", names.clone());
-            instances.insert(names.clone(), instance);
+            let mut cur_names = names.clone();
+            cur_names.push(instance.name.clone());
+            instances.insert(cur_names, instance);
         }
 
         search_for_classnames(dom, classnames, instances, names.clone(), instance);
@@ -43,7 +44,6 @@ impl Backend {
             match source {
                 Variant::String(src) => {
                     let joined_path = path.join(".");
-                    println!("path {:?}, joined {:?}", path, joined_path);
                     scripts.insert(joined_path, src.to_string());
                 },
                 _ => {}
