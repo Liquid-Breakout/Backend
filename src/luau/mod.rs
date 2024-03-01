@@ -46,6 +46,23 @@ fn internal_find_from_visit<'a>(function_to_find: &str, block: &'a Block, usage_
             Stmt::While(node) => {
                 internal_find_from_visit(function_to_find, node.block(), usage_map);
             },
+            Stmt::LocalAssignment(node) => {
+                for expr in node.expressions().into_iter() {
+                    match expr {
+                        Expression::FunctionCall(node) => {
+                            match node.prefix() {
+                                Prefix::Name(token) => {
+                                    if &token.token().to_string() == function_to_find {
+                                        usage_map.insert(range(token), node.suffixes().collect());
+                                    }
+                                },
+                                _ => {}
+                            };
+                        }
+                        _ => {}
+                    };
+                }
+            },
             Stmt::Assignment(node) => {
                 for expr in node.expressions().into_iter() {
                     match expr {
