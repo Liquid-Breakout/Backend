@@ -4,10 +4,7 @@ mod structs;
 mod rbxm;
 
 impl Backend {
-    pub async fn whitelist_asset(&self, asset_id: u64, user_id_requesting: u64) -> Result<(), Box<dyn std::error::Error>> {
-        if !self.user_own_asset_internal(user_id_requesting, asset_id).await? {
-            return Err("User does not own asset.".into())
-        }
+    pub async fn whitelist_asset_without_user(&self, asset_id: u64) -> Result<(), Box<dyn std::error::Error>> {
         let item_details = self.fetch_asset_details_internal(asset_id).await?;
         if item_details.is_public_domain.is_none() || !item_details.is_public_domain.unwrap() {
             return Err("Asset is not for sale.".into())
@@ -18,6 +15,14 @@ impl Backend {
         }
 
         self.purchase_asset_internal(asset_id).await?;
+        Ok(())
+    }
+
+    pub async fn whitelist_asset(&self, asset_id: u64, user_id_requesting: u64) -> Result<(), Box<dyn std::error::Error>> {
+        if !self.user_own_asset_internal(user_id_requesting, asset_id).await? {
+            return Err("User does not own asset.".into())
+        }
+        self.whitelist_asset_without_user(asset_id).await?;
         Ok(())
     }
 
