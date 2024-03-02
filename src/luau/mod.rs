@@ -86,7 +86,7 @@ fn internal_find_from_visit<'a>(function_to_find: &str, block: &'a Block, usage_
 }
 
 impl Backend {
-    pub fn luau_ast_from_string(&self, source: &String) -> Result<Ast, Box<dyn std::error::Error>> {
+    pub fn luau_ast_from_string(&self, source: &String) -> Result<Ast, crate::Error> {
         Ok(full_moon::parse(source)?)
     }
 

@@ -12,6 +12,7 @@ pub struct Backend {
     pub(crate) id_generator: IDConverter,
     pub(crate) mongo_client: Option<Client>
 }
+pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
 impl Backend {
     #[allow(unused_must_use)]
@@ -27,7 +28,7 @@ impl Backend {
         backend_self
     } 
     
-    pub async fn connect_mongodb(&mut self, mongodb_url: String, default_database: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn connect_mongodb(&mut self, mongodb_url: String, default_database: Option<String>) -> Result<(), Error> {
         let mut mongo_options = ClientOptions::parse(mongodb_url).await?;
         mongo_options.default_database = Some(default_database.unwrap_or("test".to_string()));
         let mongo_client = Client::with_options(mongo_options)?;
@@ -36,7 +37,7 @@ impl Backend {
         Ok(())
     }
 
-    pub fn get_shareable_id(&self, id: String) -> Result<String, Box<dyn std::error::Error>> {
+    pub fn get_shareable_id(&self, id: String) -> Result<String, Error> {
         let parsed_id = id.parse::<u64>();
         match parsed_id {
             Ok(i) => self.id_generator.to_short(i),
@@ -44,7 +45,7 @@ impl Backend {
         }
     }
 
-    pub fn get_number_id(&self, id: String) -> Result<u64, Box<dyn std::error::Error>> {
+    pub fn get_number_id(&self, id: String) -> Result<u64, Error> {
         self.id_generator.to_number(id)
     }
 }

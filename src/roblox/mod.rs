@@ -4,7 +4,7 @@ mod structs;
 mod rbxm;
 
 impl Backend {
-    pub async fn whitelist_asset_without_user(&self, asset_id: u64) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn whitelist_asset_without_user(&self, asset_id: u64) -> Result<(), crate::Error> {
         let item_details = self.fetch_asset_details_internal(asset_id).await?;
         if item_details.is_public_domain.is_none() || !item_details.is_public_domain.unwrap() {
             return Err("Asset is not for sale.".into())
@@ -18,7 +18,7 @@ impl Backend {
         Ok(())
     }
 
-    pub async fn whitelist_asset(&self, asset_id: u64, user_id_requesting: u64) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn whitelist_asset(&self, asset_id: u64, user_id_requesting: u64) -> Result<(), crate::Error> {
         if !self.user_own_asset_internal(user_id_requesting, asset_id).await? {
             return Err("User does not own asset.".into())
         }
@@ -26,7 +26,7 @@ impl Backend {
         Ok(())
     }
 
-    pub async fn download_asset_bytes(&self, asset_id: u64) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+    pub async fn download_asset_bytes(&self, asset_id: u64) -> Result<Vec<u8>, crate::Error> {
         self.download_asset_internal(asset_id).await
     }
 }
@@ -58,7 +58,7 @@ mod internal {
             reqwest_headers
         }
     
-        pub(crate) async fn refresh_xcsrf_token(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        pub(crate) async fn refresh_xcsrf_token(&mut self) -> Result<(), crate::Error> {
             let request_result = Client::new()
                 .post(AUTH_URL)
                 .headers(self.prepare_headers())
@@ -75,7 +75,7 @@ mod internal {
             Ok(())
         }
 
-        pub(super) async fn download_asset_internal(&self, asset_id: u64) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+        pub(super) async fn download_asset_internal(&self, asset_id: u64) -> Result<Vec<u8>, crate::Error> {
             let formatted_url = format!(
                 "{}/asset?id={}",
                 ASSETDELIVERY_URL,
@@ -132,7 +132,7 @@ mod internal {
             Ok(bytes)
         }
     
-        pub(super) async fn user_own_asset_internal(&self, user_id: u64, asset_id: u64) -> Result<bool, Box<dyn std::error::Error>> {
+        pub(super) async fn user_own_asset_internal(&self, user_id: u64, asset_id: u64) -> Result<bool, crate::Error> {
             let formatted_url = format!(
                 "{}/users/{}/items/Asset/{}/is-owned",
                 INVENTORY_URL,
@@ -152,7 +152,7 @@ mod internal {
             }
         }
     
-        pub(super) async fn fetch_asset_details_internal(&self, asset_id: u64) -> Result<ItemDetails, Box<dyn std::error::Error>> {
+        pub(super) async fn fetch_asset_details_internal(&self, asset_id: u64) -> Result<ItemDetails, crate::Error> {
             let formatted_url = format!(
                 "{}/assets/{}/details",
                 ECONOMY_V2_URL,
@@ -168,7 +168,7 @@ mod internal {
             Ok(request_result.json::<ItemDetails>().await?)
         }
     
-        pub(super) async fn purchase_asset_internal(&self, asset_id: u64) -> Result<(), Box<dyn std::error::Error>> {
+        pub(super) async fn purchase_asset_internal(&self, asset_id: u64) -> Result<(), crate::Error> {
             let formatted_url = format!(
                 "{}/purchases/products/{}",
                 ECONOMY_V1_URL,

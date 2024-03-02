@@ -20,7 +20,7 @@ fn search_for_classnames<'a>(dom: &'a WeakDom, classnames: &Vec<&str>, instances
 }
 
 impl Backend {
-    pub fn dom_from_bytes(&self, bytes: Vec<u8>) -> Result<WeakDom, Box<dyn std::error::Error>> {
+    pub fn dom_from_bytes(&self, bytes: Vec<u8>) -> Result<WeakDom, crate::Error> {
         let cursor = Cursor::new(bytes);
         let buf_reader = BufReader::new(cursor);
 

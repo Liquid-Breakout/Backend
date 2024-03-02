@@ -18,7 +18,7 @@ pub struct ApiKey {
 }
 
 impl Backend {
-    pub(super) async fn generate_api_key(&self) -> Result<String, Box<dyn std::error::Error>> {
+    pub(super) async fn generate_api_key(&self) -> Result<String, crate::Error> {
         let database = self.get_database();
         let api_keys_collection: Collection<ApiKey> = database.collection("apikeys");
         
@@ -32,7 +32,7 @@ impl Backend {
         api_key_generator.to_short(doc_count * 8 + datetime_now() * 2)
     }
 
-    pub async fn find_api_key_entry(&self, api_key: &str) -> Result<Option<ApiKey>, Box<dyn std::error::Error>> {
+    pub async fn find_api_key_entry(&self, api_key: &str) -> Result<Option<ApiKey>, crate::Error> {
         let database = self.get_database();
 
         let api_keys_collection: Collection<ApiKey> = database.collection("apikeys");
@@ -47,7 +47,7 @@ impl Backend {
         Ok(result)
     }
 
-    pub async fn api_key_entry_exist(&self, api_key: &str) -> Result<bool, Box<dyn std::error::Error>> {
+    pub async fn api_key_entry_exist(&self, api_key: &str) -> Result<bool, crate::Error> {
         let result = self.find_api_key_entry(api_key).await?;
 
         match result {
@@ -56,7 +56,7 @@ impl Backend {
         }
     }
 
-    pub async fn create_api_key_entry(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn create_api_key_entry(&self) -> Result<(), crate::Error> {
         let database = self.get_database();
         
         let api_keys_collection: Collection<ApiKey> = database.collection("apikeys");
@@ -73,7 +73,7 @@ impl Backend {
         Ok(())
     }
 
-    pub async fn search_api_key_entries_with_roblox_id(&self, roblox_id: u64) -> Result<Option<ApiKey>, Box<dyn std::error::Error>> {
+    pub async fn search_api_key_entries_with_roblox_id(&self, roblox_id: u64) -> Result<Option<ApiKey>, crate::Error> {
         let database = self.get_database();
         
         let api_keys_collection: Collection<ApiKey> = database.collection("apikeys");
@@ -88,7 +88,7 @@ impl Backend {
         Ok(result)
     }
 
-    pub async fn search_api_key_entries_with_discord_id(&self, discord_id: u64) -> Result<Option<ApiKey>, Box<dyn std::error::Error>> {
+    pub async fn search_api_key_entries_with_discord_id(&self, discord_id: u64) -> Result<Option<ApiKey>, crate::Error> {
         let database = self.get_database();
         
         let api_keys_collection: Collection<ApiKey> = database.collection("apikeys");
@@ -103,7 +103,7 @@ impl Backend {
         Ok(result)
     }
 
-    pub async fn is_valid_api_key(&self, api_key: &str) -> Result<bool, Box<dyn std::error::Error>> {
+    pub async fn is_valid_api_key(&self, api_key: &str) -> Result<bool, crate::Error> {
         let api_key_entry = self.find_api_key_entry(api_key).await?;
         match api_key_entry {
             Some(entry) => Ok(entry.enabled == true),
