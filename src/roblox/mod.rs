@@ -35,7 +35,7 @@ mod internal {
     use reqwest::{header, Client};
     use surf::StatusCode;
     use crate::{utils, Backend}; 
-    use super::structs::{AssetDeliveryResponse, AssetPurchaseReq, ItemDetails, RobloxApiError};
+    use super::structs::{AssetPurchaseReq, ItemDetails, RobloxApiError};
 
     const AUTH_URL: &str = "https://auth.roblox.com";
     const ASSETDELIVERY_URL: &str = "https://assetdelivery.roblox.com/v1";
